@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Code Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; line-height: 1.6; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 40px 0 30px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, #fff 0%, #888 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header p { color: rgba(255,255,255,0.6); font-size: 1rem; }
+        .card { background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); border-radius: 12px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .card h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; }
+        .form-group { margin-bottom: 24px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.875rem; color: rgba(255,255,255,0.9); }
+        .form-control { width: 100%; padding: 12px 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; font-family: 'Courier New', monospace; font-size: 0.875rem; transition: all 0.2s ease; resize: vertical; }
+        .form-control:focus { border-color: rgba(255,255,255,0.3); outline: none; background: rgba(255,255,255,0.08); }
+        textarea.form-control { min-height: 300px; }
+        select.form-control { font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; }
+        .btn { padding: 14px 28px; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .btn-primary { background: #fff; color: #000; }
+        .btn-primary:hover { background: rgba(255,255,255,0.9); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,255,255,0.2); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+        .btn-full { width: 100%; }
+        .btn-group { display: flex; gap: 12px; margin-top: 20px; }
+        .results { display: none; }
+        .results.show { display: block; }
+        .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+        .badge-success { background: rgba(0,255,0,0.1); color: #00ff00; border: 1px solid rgba(0,255,0,0.3); }
+        .badge-error { background: rgba(255,0,0,0.1); color: #ff4444; border: 1px solid rgba(255,0,0,0.3); }
+        .badge-language { background: rgba(100,149,237,0.1); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .tab { padding: 12px 20px; background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.2s ease; border-bottom: 2px solid transparent; }
+        .tab:hover { color: rgba(255,255,255,0.8); }
+        .tab.active { color: #fff; border-bottom-color: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .code-block { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 12px 0; position: relative; }
+        .code-block pre { margin: 0; font-family: 'Courier New', monospace; font-size: 0.875rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+        .copy-btn { position: absolute; top: 12px; right: 12px; padding: 6px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff; font-size: 0.75rem; cursor: pointer; transition: all 0.2s ease; }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); }
+        .error-list, .suggestion-list { list-style: none; padding: 0; }
+        .error-list li, .suggestion-list li { padding: 12px; background: rgba(255,255,255,0.03); border-left: 3px solid rgba(255,0,0,0.5); margin-bottom: 8px; border-radius: 4px; }
+        .suggestion-list li { border-left-color: rgba(100,149,237,0.5); }
+        .history-item { background: rgba(255,255,255,0.03); padding: 16px; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid rgba(255,255,255,0.05); }
+        .history-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .history-preview { font-family: 'Courier New', monospace; font-size: 0.75rem; color: rgba(255,255,255,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .stat-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 0.875rem; color: rgba(255,255,255,0.6); }
+        .spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loading { text-align: center; padding: 40px; }
+        .notification { position: fixed; top: 20px; right: 20px; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); border-radius: 8px; padding: 16px 20px; z-index: 1000; transform: translateX(400px); transition: transform 0.3s ease; border-left: 3px solid #00ff00; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .notification.show { transform: translateX(0); }
+        .notification h4 { margin-bottom: 4px; font-size: 0.875rem; }
+        .notification p { font-size: 0.75rem; color: rgba(255,255,255,0.7); }
+        .no-errors-msg { text-align: center; padding: 40px; color: rgba(255,255,255,0.6); }
+        .status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        .status-connected { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
+        .status-disconnected { background: #ff0000; box-shadow: 0 0 8px #ff0000; }
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            .card { padding: 20px; }
+            .header h1 { font-size: 1.75rem; }
+            .btn-group { flex-direction: column; }
+            .stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Gemini Code Analyzer</h1>
+            <p>AI-Powered Code Analysis with Intelligent Suggestions</p>
+            <p style="font-size: 0.75rem; margin-top: 8px;">
+                <span class="status-indicator status-disconnected" id="statusIndicator"></span>
+                <span id="statusText">Checking connection...</span>
+            </p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalAnalyses">0</div>
+                <div class="stat-label">Total Analyses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Languages Supported</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="errorRate">0%</div>
+                <div class="stat-label">Error Detection Rate</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📝 Analyze Your Code</h2>
+            
+            <div class="form-group">
+                <label class="form-label">Programming Language (Optional - Auto-detected)</label>
+                <select class="form-control" id="languageSelect">
+                    <option value="auto">Auto Detect</option>
+                    <option value="java">Java</option>
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="cpp">C++</option>
+                    <option value="csharp">C#</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                    <option value="php">PHP</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Paste Your Code Below</label>
+                <textarea class="form-control" id="codeInput" placeholder="// Paste your code here...
+
+Example:
+public static void main(String args) {
+    System.out.println(&quot;Hello World&quot;);
+}"></textarea>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary btn-full" onclick="analyzeCode()">
+                    ⚡ Analyze Code
+                </button>
+            </div>
+        </div>
+
+        <div class="card results" id="resultsCard"></div>
+
+        <div class="card">
+            <h2>📚 Recent Analysis History</h2>
+            <div id="historyList">
+                <p style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Loading history...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <h4>Success!</h4>
+        <p>Code analyzed successfully</p>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:4567/api';
+
+        // Check server health on load
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                if (data.status === 'OK') {
+                    indicator.className = 'status-indicator status-connected';
+                    statusText.textContent = `Server Connected | Database: ${data.database}`;
+                } else {
+                    indicator.className = 'status-indicator status-disconnected';
+                    statusText.textContent = 'Server Error';
+                }
+            } catch (error) {
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                indicator.className = 'status-indicator status-disconnected';
+                statusText.textContent = 'Server Offline - Start the backend server';
+            }
+        }
+
+        // Analyze code
+        async function analyzeCode() {
+            const code = document.getElementById('codeInput').value;
+            const language = document.getElementById('languageSelect').value;
+            
+            if (!code.trim()) {
+                showNotification('Error', 'Please enter some code to analyze', 'error');
+                return;
+            }
+
+            const resultsCard = document.getElementById('resultsCard');
+            resultsCard.classList.add('show');
+            resultsCard.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top: 16px;">Analyzing your code with Gemini AI...</p></div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, language })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Analysis failed');
+                }
+
+                const data = await response.json();
+                displayResults(data.result, code);
+                
+                if (data.savedToDatabase) {
+                    showNotification('Success!', 'Code analyzed and saved to database', 'success');
+                } else {
+                    showNotification('Warning', 'Analysis complete but not saved to database', 'error');
+                }
+                
+                loadHistory();
+                loadStats();
+                
+            } catch (error) {
+                resultsCard.innerHTML = `<div class="loading"><p style="color: #ff4444;">❌ Error: ${error.message}</p></div>`;
+                showNotification('Error', error.message, 'error');
+            }
+        }
+
+        // Display results
+        function displayResults(result, code) {
+            const resultsCard = document.getElementById('resultsCard');
+            resultsCard.classList.add('show');
+            
+            const errorsList = result.errors && result.errors.length > 0 
+                ? result.errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')
+                : '<div class="no-errors-msg">✅ No errors detected!</div>';
+            
+            const suggestionsList = result.suggestions && result.suggestions.length > 0
+                ? result.suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('')
+                : '<div class="no-errors-msg">No suggestions at this time</div>';
+
+            resultsCard.innerHTML = `
+                <div class="result-header">
+                    <h2>📊 Analysis Results</h2>
+                    <div>
+                        <span class="badge badge-language">${escapeHtml(result.language)}</span>
+                        <span class="badge ${result.hasErrors ? 'badge-error' : 'badge-success'}">
+                            ${result.hasErrors ? 'Errors Found' : 'No Errors'}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab(event, 'errors')">❌ Errors (${result.errors ? result.errors.length : 0})</button>
+                    <button class="tab" onclick="switchTab(event, 'suggestions')">💡 Suggestions (${result.suggestions ? result.suggestions.length : 0})</button>
+                    <button class="tab" onclick="switchTab(event, 'optimal')">⚡ Optimized Code</button>
+                    <button class="tab" onclick="switchTab(event, 'original')">📄 Original Code</button>
+                </div>
+
+                <div class="tab-content active" id="errors-content">
+                    <ul class="error-list">${errorsList}</ul>
+                </div>
+
+                <div class="tab-content" id="suggestions-content">
+                    <ul class="suggestion-list">${suggestionsList}</ul>
+                </div>
+
+                <div class="tab-content" id="optimal-content">
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode('optimalCode')">📋 Copy</button>
+                        <pre id="optimalCode">${escapeHtml(result.optimalCode || 'No optimization provided')}</pre>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="original-content">
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode('originalCode')">📋 Copy</button>
+                        <pre id="originalCode">${escapeHtml(result.originalCode)}</pre>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="downloadJSON()">💾 Download JSON</button>
+                    <button class="btn btn-secondary" onclick="analyzeAnother()">🔄 Analyze Another</button>
+                </div>
+            `;
+
+            window.currentResult = result;
+        }
+
+        // Load history
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/history?limit=10`);
+                const history = await response.json();
+                
+                const historyList = document.getElementById('historyList');
+                
+                if (history.length === 0) {
+                    historyList.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">No analyses yet. Start analyzing code above!</p>';
+                    return;
+                }
+
+                historyList.innerHTML = history.map(item => `
+                    <div class="history-item" onclick="loadHistoryItem(${item.id})">
+                        <div class="history-header">
+                            <div>
+                                <span class="badge badge-language">${escapeHtml(item.language)}</span>
+                                <span class="badge ${item.hasErrors ? 'badge-error' : 'badge-success'}">
+                                    ${item.hasErrors ? 'Has Errors' : 'No Errors'}
+                                </span>
+                            </div>
+                            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${escapeHtml(item.timestamp)}</span>
+                        </div>
+                        <div class="history-preview">${escapeHtml(item.preview)}...</div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Failed to load history:', error);
+                document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: rgba(255,0,0,0.7); padding: 20px;">Failed to load history. Make sure server is running.</p>';
+            }
+        }
+
+        // Load history item
+        async function loadHistoryItem(id) {
+            try {
+                const response = await fetch(`${API_BASE}/analysis/${id}`);
+                const result = await response.json();
+                
+                document.getElementById('codeInput').value = result.originalCode;
+                displayResults(result, result.originalCode);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showNotification('Loaded', 'Previous analysis loaded', 'success');
+                
+            } catch (error) {
+                showNotification('Error', 'Failed to load analysis', 'error');
+            }
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('totalAnalyses').textContent = stats.totalAnalyses;
+                document.getElementById('errorRate').textContent = Math.round(stats.errorRate) + '%';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Switch tabs
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-content').classList.add('active');
+        }
+
+        // Copy code
+        function copyCode(elementId) {
+            const code = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showNotification('Copied!', 'Code copied to clipboard', 'success');
+            });
+        }
+
+        // Download JSON
+        function downloadJSON() {
+            const data = { ...window.currentResult, timestamp: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `code_analysis_${Date.now()}.json`;
+            a.click();
+            showNotification('Downloaded!', 'JSON file downloaded successfully', 'success');
+        }
+
+        // Analyze another
+        function analyzeAnother() {
+            document.getElementById('codeInput').value = '';
+            document.getElementById('resultsCard').classList.remove('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Show notification
+        function showNotification(title, message, type) {
+            const notification = document.getElementById('notification');
+            notification.innerHTML = `<h4>${title}</h4><p>${message}</p>`;
+            notification.style.borderLeftColor = type === 'error' ? '#ff0000' : '#00ff00';
+            notification.classList.add('show');
+            
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            loadHistory();
+            loadStats();
+        });
+    </script>
+</body>
+</html>

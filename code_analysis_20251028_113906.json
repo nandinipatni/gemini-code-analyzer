@@ -1,0 +1,21 @@
+{
+  "originalCode": "import java.util.ArrayList;\nimport java.util.Scanner;\n\npublic class StudentAverage {\n    public static void main(String args) {\n        Scanner sc \u003d new Scanner(System.in);\n        ArrayList\u003cInteger\u003e marks \u003d new ArrayList\u003c\u003e();\n\n        System.out.println(\"Enter number of students:\");\n        int n \u003d sc.nextInt();\n\n        for (int i \u003d 0; i \u003c\u003d n; i++) {\n            System.out.print(\"Enter marks for student \" + i + \": \");\n            int mark \u003d sc.nextInt();\n            marks.add(mark);\n        }\n\n        double avg \u003d calculateAverage(marks);\n        System.out.println(\"The average marks is: \" + avg);\n    }\n\n    public static double calculateAverage(ArrayList\u003cint\u003e marks) {\n        int sum \u003d 0;\n        for (int m : marks)\n            sum \u003d sum + m;\n        return sum / marks.size();\n    }\n}",
+  "timestamp": "2025-10-28 11:39:06",
+  "language": "Java",
+  "hasErrors": false,
+  "errors": [
+    "Compile-time error: The \u0027main\u0027 method signature is incorrect. It should be \u0027public static void main(String[] args)\u0027 or \u0027public static void main(String... args)\u0027. The current \u0027String args\u0027 is not a valid parameter type.",
+    "Compile-time error: In the \u0027calculateAverage\u0027 method, \u0027ArrayList\u003cint\u003e\u0027 is used. ArrayLists can only hold objects, not primitive types. It should be \u0027ArrayList\u003cInteger\u003e\u0027.",
+    "Logical error: The loop for collecting student marks \u0027for (int i \u003d 0; i \u003c\u003d n; i++)\u0027 iterates \u0027n + 1\u0027 times (from 0 to n). If \u0027n\u0027 is the number of students, it should iterate exactly \u0027n\u0027 times. For example, \u0027for (int i \u003d 0; i \u003c n; i++)\u0027 or, for more user-friendly numbering, \u0027for (int i \u003d 1; i \u003c\u003d n; i++)\u0027.",
+    "Logical error: In the \u0027calculateAverage\u0027 method, \u0027sum / marks.size()\u0027 performs integer division because both \u0027sum\u0027 (int) and \u0027marks.size()\u0027 (int) are integers. This will truncate any decimal part, leading to an inaccurate average for non-whole numbers."
+  ],
+  "output": "Compilation failed due to syntax errors. Specifically, the \u0027main\u0027 method signature is invalid and \u0027ArrayList\u003cint\u003e\u0027 is used instead of \u0027ArrayList\u003cInteger\u003e\u0027.",
+  "suggestions": [
+    "Correct the \u0027main\u0027 method signature to \u0027public static void main(String[] args)\u0027.",
+    "Change \u0027ArrayList\u003cint\u003e\u0027 to \u0027ArrayList\u003cInteger\u003e\u0027 in the \u0027calculateAverage\u0027 method signature.",
+    "Adjust the loop condition for collecting marks to iterate exactly \u0027n\u0027 times. For example, \u0027for (int i \u003d 1; i \u003c\u003d n; i++)\u0027 for 1-based student numbering, or \u0027for (int i \u003d 0; i \u003c n; i++)\u0027 for 0-based numbering.",
+    "Cast one of the operands in the average calculation to a double to ensure floating-point division: \u0027(double) sum / marks.size()\u0027.",
+    "Close the \u0027Scanner\u0027 object using \u0027sc.close()\u0027 when it\u0027s no longer needed to prevent resource leaks.",
+    "Consider adding input validation (e.g., using a try-catch block for \u0027nextInt()\u0027) to handle cases where the user enters non-integer input or invalid marks (like negative numbers)."
+  ]
+}

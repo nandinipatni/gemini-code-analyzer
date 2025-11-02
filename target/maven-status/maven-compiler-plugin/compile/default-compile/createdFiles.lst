@@ -1,0 +1,10 @@
+CodeAnalyzerServer$AnalyzeResponse.class
+CodeAnalyzerServer$ErrorResponse.class
+CodeAnalyzerServer$AnalyzeRequest.class
+GeminiCodeAnalyzer$CodeAnalysisResult.class
+CodeAnalyzerServer$Stats.class
+GeminiCodeAnalyzer.class
+DatabaseConfig.class
+DatabaseManager$HistoryItem.class
+DatabaseManager.class
+CodeAnalyzerServer.class

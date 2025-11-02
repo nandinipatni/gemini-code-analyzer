@@ -1,0 +1,20 @@
+{
+  "originalCode": "import java.util.ArrayList;\nimport java.util.Scanner;\n\npublic class StudentAverage {\n    public static void main(String args) {\n        Scanner sc \u003d new Scanner(System.in);\n        ArrayList\u003cInteger\u003e marks \u003d new ArrayList\u003c\u003e();\n\n        System.out.println(\"Enter number of students:\");\n        int n \u003d sc.nextInt();\n\n        for (int i \u003d 0; i \u003c\u003d n; i++) {\n            System.out.print(\"Enter marks for student \" + i + \": \");\n            int mark \u003d sc.nextInt();\n            marks.add(mark);\n        }\n\n        double avg \u003d calculateAverage(marks);\n        System.out.println(\"The average marks is: \" + avg);\n    }\n\n    public static double calculateAverage(ArrayList\u003cint\u003e marks) {\n        int sum \u003d 0;\n        for (int m : marks)\n            sum \u003d sum + m;\n        return sum / marks.size();\n    }\n}",
+  "timestamp": "2025-10-28 11:53:59",
+  "language": "Java",
+  "hasErrors": false,
+  "errors": [
+    "Compilation Error: The `main` method signature is incorrect. It should be `public static void main(String[] args)` not `public static void main(String args)`.",
+    "Compilation Error: The generic type for `ArrayList` in `calculateAverage` method signature is a primitive type `int`. `ArrayList` can only hold objects. It should be `ArrayList\u003cInteger\u003e`.",
+    "Logical Error: The loop condition `for (int i \u003d 0; i \u003c\u003d n; i++)` iterates `n + 1` times, which means it will collect `n + 1` marks. If \u0027n\u0027 is the \u0027number of students\u0027, it should typically collect \u0027n\u0027 marks, meaning the loop should be `for (int i \u003d 0; i \u003c n; i++)` or `for (int i \u003d 1; i \u003c\u003d n; i++)`.",
+    "Logical Error: In the `calculateAverage` method, `sum / marks.size()` performs integer division because both `sum` and `marks.size()` are integers. The result will be truncated before being cast to `double`, leading to an incorrect average if there is a fractional part. One of the operands should be explicitly cast to `double` for floating-point division."
+  ],
+  "output": "Compilation failed due to errors:\n1. Invalid main method signature: `main(String args)` should be `main(String[] args)`.\n2. Invalid generic type for `ArrayList`: `ArrayList\u003cint\u003e` should be `ArrayList\u003cInteger\u003e`.",
+  "suggestions": [
+    "Correct the `main` method signature to `public static void main(String[] args)`.",
+    "Change the generic type in `calculateAverage` method from `ArrayList\u003cint\u003e` to `ArrayList\u003cInteger\u003e`.",
+    "Adjust the loop in the `main` method from `for (int i \u003d 0; i \u003c\u003d n; i++)` to `for (int i \u003d 0; i \u003c n; i++)` to correctly collect `n` marks for `n` students. Also, adjust the prompt inside the loop for student numbering (e.g., `i+1`).",
+    "Modify the division in `calculateAverage` to ensure floating-point division: `return (double) sum / marks.size();`.",
+    "Close the `Scanner` object using `sc.close()` at the end of the `main` method to prevent resource leaks."
+  ]
+}
