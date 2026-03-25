@@ -87,13 +87,8 @@ public class GeminiCodeAnalyzer {
             System.out.println("\n" + "=".repeat(70));
             System.out.println("✓ Results saved to JSON: " + filename);
             
-            // Save to Database
-            System.out.print("Saving to database... ");
-            if (DatabaseManager.saveToDatabase(result)) {
-                System.out.println("✓ Saved to database successfully!");
-            } else {
-                System.out.println("✗ Failed to save to database.");
-            }
+            System.out.println("\nℹ️ To save to database, use the web interface at http://localhost:4567");
+            System.out.println("   (Requires user authentication for database operations)");
             System.out.println("=".repeat(70));
             
         } catch (Exception e) {
@@ -110,22 +105,65 @@ public class GeminiCodeAnalyzer {
         return analyzeCode(code, apiKey);
     }
     
+    // Analyze code with optional context - FIXED VERSION
+    public static CodeAnalysisResult analyzeCodeWithContext(String code, String context) throws IOException {
+        String apiKey = DatabaseConfig.GEMINI_API_KEY;
+        
+        // Build prompt based on whether context is provided
+        String promptBase;
+        if (context != null && !context.trim().isEmpty()) {
+            promptBase = String.format(
+                "Context/Instructions from user: %s\n\n" +
+                "Based on the above context, analyze the following code and provide a detailed response in this EXACT JSON format:\n\n",
+                context);
+        } else {
+            promptBase = "Analyze the following code and provide a detailed response in this EXACT JSON format:\n\n";
+        }
+        
+        String prompt = promptBase +
+            "{\n" +
+            "  \"language\": \"detected programming language\",\n" +
+            "  \"has_errors\": true or false (boolean),\n" +
+            "  \"errors\": [\"list of errors if any, empty array [] if none\"],\n" +
+            "  \"output\": \"expected output if code runs successfully, or error description\",\n" +
+            "  \"suggestions\": [\"list of improvement suggestions, empty array [] if code is perfect\"],\n" +
+            "  \"optimal_code\": \"ALWAYS provide an optimized/corrected version. If code has errors, fix them. If code has no errors, provide the same code with best practices applied. NEVER leave this empty or null.\"\n" +
+            "}\n\n" +
+            "Code to analyze:\n```\n" + code + "\n```\n\n" +
+            "CRITICAL RULES:\n" +
+            "1. Return ONLY valid JSON, no markdown formatting, no additional text\n" +
+            "2. The 'optimal_code' field MUST ALWAYS contain working code\n" +
+            "3. Use true/false (not \"true\"/\"false\") for has_errors\n" +
+            "4. Use empty arrays [] not null for errors/suggestions if none exist";
+        
+        return analyzeCodeWithPrompt(code, prompt, apiKey);
+    }
+    
     private static CodeAnalysisResult analyzeCode(String code, String apiKey) throws IOException {
         // Create the prompt for Gemini
         String prompt = String.format(
             "Analyze the following code and provide a detailed response in this EXACT JSON format:\n\n" +
             "{\n" +
             "  \"language\": \"detected programming language\",\n" +
-            "  \"has_errors\": true/false,\n" +
-            "  \"errors\": [\"list of errors if any, empty array if none\"],\n" +
+            "  \"has_errors\": true or false (boolean),\n" +
+            "  \"errors\": [\"list of errors if any, empty array [] if none\"],\n" +
             "  \"output\": \"expected output if code runs successfully, or error description\",\n" +
-            "  \"suggestions\": [\"list of improvement suggestions\"],\n" +
-            "  \"optimal_code\": \"optimized version of the code\"\n" +
+            "  \"suggestions\": [\"list of improvement suggestions, empty array [] if code is perfect\"],\n" +
+            "  \"optimal_code\": \"ALWAYS provide an optimized/corrected version. If code has errors, fix them. If code has no errors, provide the same code with best practices applied. NEVER leave this empty or null.\"\n" +
             "}\n\n" +
             "Code to analyze:\n```\n%s\n```\n\n" +
-            "Provide ONLY the JSON response, no additional text.", code
+            "CRITICAL RULES:\n" +
+            "1. Return ONLY valid JSON, no markdown formatting, no additional text\n" +
+            "2. The 'optimal_code' field MUST ALWAYS contain working code\n" +
+            "3. Use true/false (not \"true\"/\"false\") for has_errors\n" +
+            "4. Use empty arrays [] not null for errors/suggestions if none exist", code
         );
         
+        return analyzeCodeWithPrompt(code, prompt, apiKey);
+    }
+    
+    // Refactored method to handle custom prompts
+    private static CodeAnalysisResult analyzeCodeWithPrompt(String code, String prompt, String apiKey) throws IOException {
         // Create JSON payload for Gemini API
         JsonObject parts = new JsonObject();
         parts.addProperty("text", prompt);
@@ -184,6 +222,19 @@ public class GeminiCodeAnalyzer {
         result.originalCode = code;
         result.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         
+        // CRITICAL FIX: Ensure optimal_code is never null or empty
+        if (result.optimalCode == null || result.optimalCode.trim().isEmpty()) {
+            result.optimalCode = code; // Fallback to original if AI didn't provide
+        }
+        
+        // CRITICAL FIX: Ensure errors and suggestions are never null
+        if (result.errors == null) {
+            result.errors = new String[0];
+        }
+        if (result.suggestions == null) {
+            result.suggestions = new String[0];
+        }
+        
         return result;
     }
     
@@ -191,7 +242,7 @@ public class GeminiCodeAnalyzer {
         System.out.println("📋 ANALYSIS RESULTS");
         System.out.println("=".repeat(70));
         
-        System.out.println("\n🔤 Detected Language: " + result.language);
+        System.out.println("\n📤 Detected Language: " + result.language);
         System.out.println("\n⏰ Timestamp: " + result.timestamp);
         
         System.out.println("\n" + "-".repeat(70));

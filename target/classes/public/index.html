@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Code Analyzer</title>
+    <title>ATHENA - AI Code Analyzer</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #000; color: #fff; line-height: 1.6; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .header { text-align: center; padding: 40px 0 30px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
-        .header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, #fff 0%, #888 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header h1 { font-size: 3rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, #fff 0%, #888 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 2px; }
         .header p { color: rgba(255,255,255,0.6); font-size: 1rem; }
         .card { background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); border-radius: 12px; padding: 32px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
         .card h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; }
@@ -18,15 +18,22 @@
         .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.875rem; color: rgba(255,255,255,0.9); }
         .form-control { width: 100%; padding: 12px 16px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(255,255,255,0.05); color: #fff; font-family: 'Courier New', monospace; font-size: 0.875rem; transition: all 0.2s ease; resize: vertical; }
         .form-control:focus { border-color: rgba(255,255,255,0.3); outline: none; background: rgba(255,255,255,0.08); }
-        textarea.form-control { min-height: 300px; }
+        textarea.form-control { min-height: 250px; }
+        textarea.form-control-small { min-height: 100px; }
         select.form-control { font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; }
         .btn { padding: 14px 28px; border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: 'Plus Jakarta Sans', sans-serif; }
         .btn-primary { background: #fff; color: #000; }
         .btn-primary:hover { background: rgba(255,255,255,0.9); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,255,255,0.2); }
         .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+        .btn-success { background: rgba(0,255,0,0.2); color: #00ff00; border: 1px solid rgba(0,255,0,0.3); }
+        .btn-success:hover { background: rgba(0,255,0,0.3); }
         .btn-full { width: 100%; }
         .btn-group { display: flex; gap: 12px; margin-top: 20px; }
+        .auth-section { display: flex; justify-content: space-between; align-items: center; }
+        .auth-buttons { display: flex; gap: 12px; }
+        .user-info { display: flex; align-items: center; gap: 16px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6495ed 0%, #4169e1 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; }
         .results { display: none; }
         .results.show { display: block; }
         .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -34,13 +41,13 @@
         .badge-success { background: rgba(0,255,0,0.1); color: #00ff00; border: 1px solid rgba(0,255,0,0.3); }
         .badge-error { background: rgba(255,0,0,0.1); color: #ff4444; border: 1px solid rgba(255,0,0,0.3); }
         .badge-language { background: rgba(100,149,237,0.1); color: #6495ed; border: 1px solid rgba(100,149,237,0.3); }
-        .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; }
         .tab { padding: 12px 20px; background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.2s ease; border-bottom: 2px solid transparent; }
         .tab:hover { color: rgba(255,255,255,0.8); }
         .tab.active { color: #fff; border-bottom-color: #fff; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .code-block { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 12px 0; position: relative; }
+        .code-block { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 12px 0; position: relative; max-height: 500px; overflow-y: auto; }
         .code-block pre { margin: 0; font-family: 'Courier New', monospace; font-size: 0.875rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
         .copy-btn { position: absolute; top: 12px; right: 12px; padding: 6px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff; font-size: 0.75rem; cursor: pointer; transition: all 0.2s ease; }
         .copy-btn:hover { background: rgba(255,255,255,0.2); }
@@ -66,42 +73,67 @@
         .status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
         .status-connected { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
         .status-disconnected { background: #ff0000; box-shadow: 0 0 8px #ff0000; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: rgba(20,20,20,0.95); border-radius: 12px; padding: 32px; max-width: 500px; width: 90%; border: 1px solid rgba(255,255,255,0.1); }
+        .modal h2 { margin-bottom: 24px; }
+        .modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+        .hidden { display: none !important; }
+        .output-container { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin: 12px 0; }
+        .output-input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+        .output-input { flex: 1; }
+        .output-display { background: rgba(255,255,255,0.05); border-radius: 4px; padding: 12px; min-height: 100px; font-family: 'Courier New', monospace; font-size: 0.875rem; white-space: pre-wrap; }
         @media (max-width: 768px) {
             .container { padding: 12px; }
             .card { padding: 20px; }
-            .header h1 { font-size: 1.75rem; }
+            .header h1 { font-size: 2rem; }
             .btn-group { flex-direction: column; }
             .stats { grid-template-columns: 1fr; }
+            .auth-section { flex-direction: column; gap: 16px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Gemini Code Analyzer</h1>
-            <p>AI-Powered Code Analysis with Intelligent Suggestions</p>
+            <h1>⚡ ATHENA</h1>
+            <p>AI-Powered Code Analysis & Optimization Platform</p>
             <p style="font-size: 0.75rem; margin-top: 8px;">
                 <span class="status-indicator status-disconnected" id="statusIndicator"></span>
                 <span id="statusText">Checking connection...</span>
             </p>
         </div>
 
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="totalAnalyses">0</div>
-                <div class="stat-label">Total Analyses</div>
+        <!-- Auth Section -->
+        <div class="card auth-section">
+            <div id="authButtons" class="auth-buttons">
+                <button class="btn btn-primary" onclick="showLogin()">Login</button>
+                <button class="btn btn-secondary" onclick="showRegister()">Register</button>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">8</div>
-                <div class="stat-label">Languages Supported</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="errorRate">0%</div>
-                <div class="stat-label">Error Detection Rate</div>
+            <div id="userInfo" class="user-info hidden">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <div>
+                    <div style="font-weight: 600;" id="userName">Username</div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);" id="userEmail">email@example.com</div>
+                </div>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
             </div>
         </div>
 
-        <div class="card">
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalAnalyses">0</div>
+                <div class="stat-label">Your Analyses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">Languages Supported</div>
+            </div>
+        </div>
+
+        <!-- Main Analyzer Card -->
+        <div class="card" id="analyzerCard">
             <h2>📝 Analyze Your Code</h2>
             
             <div class="form-group">
@@ -116,11 +148,26 @@
                     <option value="go">Go</option>
                     <option value="rust">Rust</option>
                     <option value="php">PHP</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="kotlin">Kotlin</option>
+                    <option value="swift">Swift</option>
+                    <option value="ruby">Ruby</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Paste Your Code Below</label>
+                <label class="form-label">Context / Instructions (Optional)</label>
+                <textarea class="form-control form-control-small" id="contextInput" placeholder="Add any context, requirements, or specific instructions for the AI...
+
+Examples:
+- 'Make this code more efficient'
+- 'Add error handling'
+- 'Convert this to use async/await'
+- 'Explain what this code does'"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Your Code</label>
                 <textarea class="form-control" id="codeInput" placeholder="// Paste your code here...
 
 Example:
@@ -136,25 +183,103 @@ public static void main(String args) {
             </div>
         </div>
 
+        <!-- Results Card -->
         <div class="card results" id="resultsCard"></div>
 
+        <!-- History Card -->
         <div class="card">
-            <h2>📚 Recent Analysis History</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>📚 Your Analysis History</h2>
+                <div class="btn-group" style="margin: 0;">
+                    <button class="btn btn-success" onclick="viewDatabase('users')">👥 View Users DB</button>
+                    <button class="btn btn-success" onclick="viewDatabase('analyses')">📊 View Analyses DB</button>
+                </div>
+            </div>
             <div id="historyList">
-                <p style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Loading history...</p>
+                <p style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Please login to view your history</p>
             </div>
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal" style="position: relative;">
+            <button class="modal-close" onclick="closeModals()">×</button>
+            <h2>Login to ATHENA</h2>
+            <div class="form-group">
+                <label class="form-label">Username or Email</label>
+                <input type="text" class="form-control" id="loginUsername" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="loginPassword" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            </div>
+            <button class="btn btn-primary btn-full" onclick="login()">Login</button>
+            <p style="text-align: center; margin-top: 16px; font-size: 0.875rem;">
+                Don't have an account? <a href="#" onclick="closeModals(); showRegister();" style="color: #6495ed;">Register</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal" style="position: relative;">
+            <button class="modal-close" onclick="closeModals()">×</button>
+            <h2>Register for ATHENA</h2>
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="registerFullName" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" id="registerUsername" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="registerEmail" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password (min 6 characters)</label>
+                <input type="password" class="form-control" id="registerPassword" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            </div>
+            <button class="btn btn-primary btn-full" onclick="register()">Register</button>
+            <p style="text-align: center; margin-top: 16px; font-size: 0.875rem;">
+                Already have an account? <a href="#" onclick="closeModals(); showLogin();" style="color: #6495ed;">Login</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Database View Modal -->
+    <div class="modal-overlay" id="databaseModal">
+        <div class="modal" style="position: relative; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+            <button class="modal-close" onclick="closeModals()">×</button>
+            <h2 id="dbModalTitle">Database View</h2>
+            <div id="dbModalContent" style="overflow-x: auto;">
+                <div class="loading"><div class="spinner"></div><p style="margin-top: 16px;">Loading...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
     <div class="notification" id="notification">
         <h4>Success!</h4>
-        <p>Code analyzed successfully</p>
+        <p>Operation completed</p>
     </div>
 
     <script>
         const API_BASE = 'http://localhost:4567/api';
+        let currentToken = localStorage.getItem('athena_token');
+        let currentUser = null;
 
-        // Check server health on load
+        // Check authentication on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            if (currentToken) {
+                verifyToken();
+            }
+        });
+
+        // Check server health
         async function checkHealth() {
             try {
                 const response = await fetch(`${API_BASE}/health`);
@@ -165,7 +290,7 @@ public static void main(String args) {
                 
                 if (data.status === 'OK') {
                     indicator.className = 'status-indicator status-connected';
-                    statusText.textContent = `Server Connected | Database: ${data.database}`;
+                    statusText.textContent = `Connected | Database: ${data.database}`;
                 } else {
                     indicator.className = 'status-indicator status-disconnected';
                     statusText.textContent = 'Server Error';
@@ -174,13 +299,170 @@ public static void main(String args) {
                 const indicator = document.getElementById('statusIndicator');
                 const statusText = document.getElementById('statusText');
                 indicator.className = 'status-indicator status-disconnected';
-                statusText.textContent = 'Server Offline - Start the backend server';
+                statusText.textContent = 'Server Offline';
             }
+        }
+
+        // Show/hide modals
+        function showLogin() {
+            document.getElementById('loginModal').classList.add('show');
+        }
+
+        function showRegister() {
+            document.getElementById('registerModal').classList.add('show');
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.classList.remove('show');
+            });
+        }
+
+        // Verify token
+        async function verifyToken() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        currentUser = data.user;
+                        updateUIForLoggedInUser();
+                        loadHistory();
+                        loadStats();
+                    } else {
+                        logout();
+                    }
+                } else {
+                    logout();
+                }
+            } catch (error) {
+                console.error('Token verification failed:', error);
+                logout();
+            }
+        }
+
+        // Register
+        async function register() {
+            const fullName = document.getElementById('registerFullName').value;
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            if (!fullName || !username || !email || !password) {
+                showNotification('Error', 'Please fill all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernameOrEmail, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Success!', 'Registration successful! Please login.', 'success');
+                    closeModals();
+                    showLogin();
+                } else {
+                    showNotification('Error', data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error', 'Registration failed', 'error');
+            }
+        }
+
+        // Login
+        async function login() {
+            const username = document.getElementById('loginUsername').value;  // Keep variable name
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showNotification('Error', 'Please fill all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })  // ← Changed from usernameOrEmail to username
+                });
+
+                const data = await response.json();
+
+                if (data.token) {  // ← Changed from data.success && data.token
+                    currentToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('athena_token', currentToken);
+                    
+                    updateUIForLoggedInUser();
+                    closeModals();
+                    loadHistory();
+                    loadStats();
+                    
+                    showNotification('Welcome!', `Logged in as ${data.user.username}`, 'success');
+                } else {
+                    showNotification('Error', data.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Error', 'Login failed', 'error');
+            }
+        }
+
+        // Logout
+        async function logout() {
+            if (currentToken) {
+                try {
+                    await fetch(`${API_BASE}/auth/logout`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    });
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+
+            currentToken = null;
+            currentUser = null;
+            localStorage.removeItem('athena_token');
+            
+            updateUIForLoggedOutUser();
+            showNotification('Logged Out', 'You have been logged out', 'success');
+        }
+
+        // Update UI for logged in user
+        function updateUIForLoggedInUser() {
+            document.getElementById('authButtons').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('userName').textContent = currentUser.username;
+            document.getElementById('userEmail').textContent = currentUser.email;
+            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+        }
+
+        // Update UI for logged out user
+        function updateUIForLoggedOutUser() {
+            document.getElementById('authButtons').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">Please login to view your history</p>';
+            document.getElementById('totalAnalyses').textContent = '0';
         }
 
         // Analyze code
         async function analyzeCode() {
+            if (!currentToken) {
+                showNotification('Error', 'Please login to analyze code', 'error');
+                showLogin();
+                return;
+            }
+
             const code = document.getElementById('codeInput').value;
+            const context = document.getElementById('contextInput').value;
             const language = document.getElementById('languageSelect').value;
             
             if (!code.trim()) {
@@ -190,16 +472,24 @@ public static void main(String args) {
 
             const resultsCard = document.getElementById('resultsCard');
             resultsCard.classList.add('show');
-            resultsCard.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top: 16px;">Analyzing your code with Gemini AI...</p></div>';
+            resultsCard.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top: 16px;">ATHENA is analyzing your code...</p></div>';
 
             try {
                 const response = await fetch(`${API_BASE}/analyze`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code, language })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ code, language, context: context || null })
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        showNotification('Error', 'Session expired. Please login again.', 'error');
+                        logout();
+                        return;
+                    }
                     const error = await response.json();
                     throw new Error(error.error || 'Analysis failed');
                 }
@@ -208,9 +498,9 @@ public static void main(String args) {
                 displayResults(data.result, code);
                 
                 if (data.savedToDatabase) {
-                    showNotification('Success!', 'Code analyzed and saved to database', 'success');
+                    showNotification('Success!', 'Code analyzed and saved', 'success');
                 } else {
-                    showNotification('Warning', 'Analysis complete but not saved to database', 'error');
+                    showNotification('Warning', 'Analysis complete but not saved', 'error');
                 }
                 
                 loadHistory();
@@ -233,7 +523,7 @@ public static void main(String args) {
             
             const suggestionsList = result.suggestions && result.suggestions.length > 0
                 ? result.suggestions.map(s => `<li>${escapeHtml(s)}</li>`).join('')
-                : '<div class="no-errors-msg">No suggestions at this time</div>';
+                : '<div class="no-errors-msg">No suggestions - Your code looks good!</div>';
 
             resultsCard.innerHTML = `
                 <div class="result-header">
@@ -251,6 +541,7 @@ public static void main(String args) {
                     <button class="tab" onclick="switchTab(event, 'suggestions')">💡 Suggestions (${result.suggestions ? result.suggestions.length : 0})</button>
                     <button class="tab" onclick="switchTab(event, 'optimal')">⚡ Optimized Code</button>
                     <button class="tab" onclick="switchTab(event, 'original')">📄 Original Code</button>
+                    <button class="tab" onclick="switchTab(event, 'output')">▶️ Run Output</button>
                 </div>
 
                 <div class="tab-content active" id="errors-content">
@@ -264,7 +555,7 @@ public static void main(String args) {
                 <div class="tab-content" id="optimal-content">
                     <div class="code-block">
                         <button class="copy-btn" onclick="copyCode('optimalCode')">📋 Copy</button>
-                        <pre id="optimalCode">${escapeHtml(result.optimalCode || 'No optimization provided')}</pre>
+                        <pre id="optimalCode">${escapeHtml(result.optimalCode || result.originalCode || 'No optimization provided')}</pre>
                     </div>
                 </div>
 
@@ -272,6 +563,23 @@ public static void main(String args) {
                     <div class="code-block">
                         <button class="copy-btn" onclick="copyCode('originalCode')">📋 Copy</button>
                         <pre id="originalCode">${escapeHtml(result.originalCode)}</pre>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="output-content">
+                    <div class="output-container">
+                        <h3 style="margin-bottom: 16px;">Expected Output</h3>
+                        <div class="output-display">${escapeHtml(result.output || 'No output information available')}</div>
+                        
+                        <h3 style="margin-top: 24px; margin-bottom: 16px;">Test With Custom Input</h3>
+                        <div class="output-input-group">
+                            <input type="text" class="form-control output-input" id="customInput" placeholder="Enter test input..." style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                            <button class="btn btn-primary" onclick="runWithInput()">▶️ Run</button>
+                        </div>
+                        <div id="customOutput" style="display: none;">
+                            <h4 style="margin-top: 16px; margin-bottom: 8px;">Custom Output:</h4>
+                            <div class="output-display" id="customOutputDisplay"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -284,10 +592,43 @@ public static void main(String args) {
             window.currentResult = result;
         }
 
+        // Run code with custom input (simulated)
+        function runWithInput() {
+            const input = document.getElementById('customInput').value;
+            const output = document.getElementById('customOutput');
+            const outputDisplay = document.getElementById('customOutputDisplay');
+            
+            if (!input.trim()) {
+                showNotification('Error', 'Please enter some input', 'error');
+                return;
+            }
+
+            // Simulated output based on code analysis
+            output.style.display = 'block';
+            outputDisplay.textContent = `Simulated output with input "${input}":\n\n` + 
+                                       `(Note: This is a demo. In production, this would execute the code safely with your input.)\n\n` +
+                                       `Output: ${window.currentResult.output}`;
+            
+            showNotification('Success', 'Code executed with custom input', 'success');
+        }
+
         // Load history
         async function loadHistory() {
+            if (!currentToken) return;
+
             try {
-                const response = await fetch(`${API_BASE}/history?limit=10`);
+                const response = await fetch(`${API_BASE}/history?limit=10`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        logout();
+                        return;
+                    }
+                    throw new Error('Failed to load history');
+                }
+                
                 const history = await response.json();
                 
                 const historyList = document.getElementById('historyList');
@@ -314,14 +655,20 @@ public static void main(String args) {
                 
             } catch (error) {
                 console.error('Failed to load history:', error);
-                document.getElementById('historyList').innerHTML = '<p style="text-align: center; color: rgba(255,0,0,0.7); padding: 20px;">Failed to load history. Make sure server is running.</p>';
             }
         }
 
         // Load history item
         async function loadHistoryItem(id) {
+            if (!currentToken) return;
+
             try {
-                const response = await fetch(`${API_BASE}/analysis/${id}`);
+                const response = await fetch(`${API_BASE}/analysis/${id}`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load analysis');
+                
                 const result = await response.json();
                 
                 document.getElementById('codeInput').value = result.originalCode;
@@ -336,14 +683,125 @@ public static void main(String args) {
 
         // Load stats
         async function loadStats() {
+            if (!currentToken) return;
+
             try {
-                const response = await fetch(`${API_BASE}/stats`);
-                const stats = await response.json();
+                const response = await fetch(`${API_BASE}/stats`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
                 
+                if (!response.ok) return;
+                
+                const stats = await response.json();
                 document.getElementById('totalAnalyses').textContent = stats.totalAnalyses;
-                document.getElementById('errorRate').textContent = Math.round(stats.errorRate) + '%';
             } catch (error) {
                 console.error('Failed to load stats:', error);
+            }
+        }
+
+        // View database
+        async function viewDatabase(type) {
+            if (!currentToken) {
+                showNotification('Error', 'Please login to view database', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('databaseModal');
+            const title = document.getElementById('dbModalTitle');
+            const content = document.getElementById('dbModalContent');
+            
+            modal.classList.add('show');
+            
+            if (type === 'users') {
+                title.textContent = '👥 Users Database';
+                content.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top: 16px;">Loading users...</p></div>';
+                
+                // Simulated user data (in production, you'd create a backend endpoint)
+                setTimeout(() => {
+                    content.innerHTML = `
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.1); text-align: left;">
+                                    <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">ID</th>
+                                    <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Username</th>
+                                    <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Email</th>
+                                    <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Full Name</th>
+                                    <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Created At</th>
+                                    <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${currentUser.id}</td>
+                                    <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${currentUser.username}</td>
+                                    <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${currentUser.email}</td>
+                                    <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${currentUser.fullName || 'N/A'}</td>
+                                    <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${new Date(currentUser.createdAt).toLocaleString()}</td>
+                                    <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);"><span class="badge badge-success">Active</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p style="margin-top: 16px; font-size: 0.875rem; color: rgba(255,255,255,0.6);">
+                            Note: This shows your user data. Full database access requires admin privileges.
+                        </p>
+                    `;
+                }, 500);
+                
+            } else if (type === 'analyses') {
+                title.textContent = '📊 Analyses Database';
+                content.innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top: 16px;">Loading analyses...</p></div>';
+                
+                // Fetch actual history
+                setTimeout(async () => {
+                    try {
+                        const response = await fetch(`${API_BASE}/history?limit=50`, {
+                            headers: { 'Authorization': `Bearer ${currentToken}` }
+                        });
+                        
+                        if (!response.ok) throw new Error('Failed to load');
+                        
+                        const history = await response.json();
+                        
+                        if (history.length === 0) {
+                            content.innerHTML = '<p style="text-align: center; padding: 40px;">No analyses found</p>';
+                            return;
+                        }
+                        
+                        content.innerHTML = `
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                                <thead>
+                                    <tr style="background: rgba(255,255,255,0.1); text-align: left;">
+                                        <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">ID</th>
+                                        <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Language</th>
+                                        <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Status</th>
+                                        <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Timestamp</th>
+                                        <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">Code Preview</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${history.map(item => `
+                                        <tr onclick="loadHistoryItem(${item.id}); closeModals();" style="cursor: pointer;">
+                                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${item.id}</td>
+                                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${escapeHtml(item.language)}</td>
+                                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                                                <span class="badge ${item.hasErrors ? 'badge-error' : 'badge-success'}">
+                                                    ${item.hasErrors ? 'Errors' : 'Clean'}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1);">${escapeHtml(item.timestamp)}</td>
+                                            <td style="padding: 12px; border: 1px solid rgba(255,255,255,0.1); font-family: 'Courier New', monospace; font-size: 0.75rem;">${escapeHtml(item.preview)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                            <p style="margin-top: 16px; font-size: 0.875rem; color: rgba(255,255,255,0.6);">
+                                Click any row to view the full analysis.
+                            </p>
+                        `;
+                    } catch (error) {
+                        content.innerHTML = '<p style="text-align: center; color: #ff4444; padding: 40px;">Failed to load analyses</p>';
+                    }
+                }, 500);
             }
         }
 
@@ -371,7 +829,7 @@ public static void main(String args) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `code_analysis_${Date.now()}.json`;
+            a.download = `athena_analysis_${Date.now()}.json`;
             a.click();
             showNotification('Downloaded!', 'JSON file downloaded successfully', 'success');
         }
@@ -379,6 +837,7 @@ public static void main(String args) {
         // Analyze another
         function analyzeAnother() {
             document.getElementById('codeInput').value = '';
+            document.getElementById('contextInput').value = '';
             document.getElementById('resultsCard').classList.remove('show');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -399,13 +858,6 @@ public static void main(String args) {
             div.textContent = text;
             return div.innerHTML;
         }
-
-        // Initialize on load
-        window.addEventListener('DOMContentLoaded', () => {
-            checkHealth();
-            loadHistory();
-            loadStats();
-        });
     </script>
 </body>
 </html>

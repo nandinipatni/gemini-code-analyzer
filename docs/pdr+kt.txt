@@ -1,0 +1,2367 @@
+📋 Product Requirements Document (PRD) & Knowledge Transfer (KT)
+Gemini Code Analyzer - Complete Documentation
+________________________________________
+PART 1: PRODUCT REQUIREMENTS DOCUMENT (PRD)
+________________________________________
+1. EXECUTIVE SUMMARY
+1.1 Product Overview
+Gemini Code Analyzer is a full-stack web application that leverages Google's Gemini 2.5 Flash AI model to automatically analyze source code, detect errors, provide improvement suggestions, and generate optimized code versions across multiple programming languages. The system combines AI-powered analysis with robust database management to provide a comprehensive code quality assessment tool.
+1.2 Business Objectives
+•	Reduce code review time by automating initial error detection
+•	Improve code quality through AI-powered suggestions
+•	Create a centralized repository of code analysis history
+•	Provide educational value for developers learning best practices
+•	Demonstrate integration of modern technologies (AI, databases, web services)
+1.3 Target Users
+•	Primary: Individual developers, students, and coding learners
+•	Secondary: Small development teams, educational institutions, code review teams
+•	Tertiary: Technical recruiters evaluating coding skills
+1.4 Key Success Metrics
+•	Analysis accuracy rate: >85%
+•	Response time: <5 seconds per analysis
+•	System uptime: >95%
+•	User satisfaction: 4+/5 rating
+•	Database query performance: <100ms for history retrieval
+________________________________________
+2. FUNCTIONAL REQUIREMENTS
+2.1 Core Features
+2.1.1 Code Analysis Engine
+Feature ID: F-001
+Priority: Critical
+Description: Analyze source code using Google Gemini AI API
+Requirements:
+•	FR-001.1: System shall accept code input via web interface textarea (max 10,000 characters)
+•	FR-001.2: System shall automatically detect programming language or accept manual selection
+•	FR-001.3: System shall identify syntax errors, logical errors, and runtime issues
+•	FR-001.4: System shall provide specific error descriptions with context
+•	FR-001.5: System shall generate improvement suggestions for detected issues
+•	FR-001.6: System shall create an optimized version of the input code
+•	FR-001.7: Analysis response time shall not exceed 10 seconds
+•	FR-001.8: System shall handle API rate limits gracefully with appropriate error messages
+Supported Languages:
+•	Java
+•	Python
+•	JavaScript
+•	C++
+•	C#
+•	Go
+•	Rust
+•	PHP
+Input Validation:
+•	Minimum code length: 10 characters
+•	Maximum code length: 10,000 characters
+•	Character encoding: UTF-8
+•	Special characters: Allowed (all programming symbols)
+Output Format:
+{
+  "language": "string",
+  "hasErrors": boolean,
+  "errors": ["string array"],
+  "output": "string",
+  "suggestions": ["string array"],
+  "optimalCode": "string",
+  "originalCode": "string",
+  "timestamp": "YYYY-MM-DD HH:mm:ss"
+}
+________________________________________
+2.1.2 Database Management
+Feature ID: F-002
+Priority: Critical
+Description: Persistent storage of analysis results in MySQL database
+Requirements:
+•	FR-002.1: System shall save all analysis results to MySQL database automatically
+•	FR-002.2: Database schema shall include 10 fields: id, original_code, timestamp, language, has_errors, errors, output, suggestions, optimal_code, created_at
+•	FR-002.3: System shall use prepared statements to prevent SQL injection
+•	FR-002.4: System shall handle database connection failures gracefully
+•	FR-002.5: System shall support concurrent database operations (minimum 10 connections)
+•	FR-002.6: Database queries shall complete within 100ms for standard operations
+•	FR-002.7: System shall maintain referential integrity and data consistency
+Database Schema:
+CREATE TABLE code_analysis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    original_code TEXT NOT NULL,
+    timestamp DATETIME NOT NULL,
+    language VARCHAR(100),
+    has_errors BOOLEAN DEFAULT FALSE,
+    errors TEXT,
+    output TEXT,
+    suggestions TEXT,
+    optimal_code TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+Indexes:
+•	Primary key on id
+•	Index on timestamp for chronological queries
+•	Index on language for filtering
+•	Index on has_errors for statistics
+________________________________________
+2.1.3 History Management
+Feature ID: F-003
+Priority: High
+Description: View and retrieve past analysis results
+Requirements:
+•	FR-003.1: System shall display last 10 analysis results by default
+•	FR-003.2: History items shall show: language, error status, timestamp, code preview (100 chars)
+•	FR-003.3: Users shall be able to click history items to reload full analysis
+•	FR-003.4: History shall be sorted by most recent first
+•	FR-003.5: System shall support pagination for large history sets (future enhancement)
+•	FR-003.6: History shall update automatically after new analysis without page refresh
+History Item Display:
+•	Language badge (color-coded)
+•	Error status badge (red/green)
+•	Timestamp (YYYY-MM-DD HH:mm:ss format)
+•	Code preview (first 100 characters, truncated with "...")
+•	Hover effect for interactivity
+________________________________________
+2.1.4 Web-Based User Interface
+Feature ID: F-004
+Priority: Critical
+Description: Modern, responsive web interface using ATHENA V3 design system
+Requirements:
+•	FR-004.1: Interface shall be accessible via web browser on desktop and mobile
+•	FR-004.2: UI shall use dark theme (#000 background) with glassmorphism effects
+•	FR-004.3: All text shall use Plus Jakarta Sans font family
+•	FR-004.4: Interface shall display server connection status in real-time
+•	FR-004.5: Loading indicators shall be shown during API calls
+•	FR-004.6: Results shall be displayed in tabbed interface (Errors, Suggestions, Optimized Code, Original Code)
+•	FR-004.7: All code blocks shall have "Copy to Clipboard" functionality
+•	FR-004.8: Interface shall be responsive (mobile breakpoint: 768px)
+•	FR-004.9: Toast notifications shall appear for user actions (success/error)
+•	FR-004.10: Statistics dashboard shall display: Total Analyses, Languages Supported, Error Detection Rate
+Color Palette:
+•	Primary background: #000
+•	Card background: rgba(20,20,20,0.95)
+•	Text primary: #fff
+•	Text secondary: rgba(255,255,255,0.6)
+•	Borders: rgba(255,255,255,0.1)
+•	Success: #00ff00
+•	Error: #ff4444
+•	Info: #6495ed
+Typography Scale:
+•	H1: 2.5rem / 700 weight
+•	H2: 1.5rem / 600 weight
+•	Body: 1rem / 400 weight
+•	Small: 0.875rem / 400 weight
+•	Code: Courier New, monospace
+________________________________________
+2.1.5 RESTful API
+Feature ID: F-005
+Priority: Critical
+Description: Backend REST API for frontend-backend communication
+Requirements:
+•	FR-005.1: API shall run on port 4567 by default
+•	FR-005.2: All API responses shall be in JSON format
+•	FR-005.3: API shall implement CORS to allow frontend access
+•	FR-005.4: API shall return appropriate HTTP status codes (200, 400, 404, 500)
+•	FR-005.5: API shall log all requests to console for debugging
+API Endpoints:
+1. Health Check
+GET /api/health
+Response: {
+  "status": "OK",
+  "message": "Server is running",
+  "database": "Connected|Disconnected"
+}
+2. Analyze Code
+POST /api/analyze
+Request Body: {
+  "code": "string",
+  "language": "string (optional)"
+}
+Response: {
+  "result": CodeAnalysisResult,
+  "savedToDatabase": boolean
+}
+3. Get History
+GET /api/history?limit=10
+Response: [
+  {
+    "id": int,
+    "language": "string",
+    "hasErrors": boolean,
+    "timestamp": "string",
+    "preview": "string"
+  }
+]
+4. Get Analysis by ID
+GET /api/analysis/:id
+Response: CodeAnalysisResult
+5. Get Statistics
+GET /api/stats
+Response: {
+  "totalAnalyses": int,
+  "withErrors": int,
+  "errorRate": double
+}
+________________________________________
+2.1.6 Export Functionality
+Feature ID: F-006
+Priority: Medium
+Description: Export analysis results in multiple formats
+Requirements:
+•	FR-006.1: System shall allow downloading analysis results as JSON file
+•	FR-006.2: JSON filename shall include timestamp: code_analysis_YYYYMMDD_HHmmss.json
+•	FR-006.3: JSON shall be pretty-printed (indented) for readability
+•	FR-006.4: Downloaded file shall include all analysis fields
+________________________________________
+2.1.7 Security Features
+Feature ID: F-007
+Priority: Critical
+Description: Security measures to protect system and data
+Requirements:
+•	FR-007.1: API keys shall be stored in environment variables or secure config
+•	FR-007.2: Database passwords shall never be hardcoded in production
+•	FR-007.3: All database queries shall use prepared statements (SQL injection prevention)
+•	FR-007.4: API shall implement CORS headers for controlled access
+•	FR-007.5: Input validation shall prevent XSS attacks (HTML escaping)
+•	FR-007.6: System shall sanitize all user inputs before processing
+•	FR-007.7: Error messages shall not expose sensitive system information
+________________________________________
+3. NON-FUNCTIONAL REQUIREMENTS
+3.1 Performance Requirements
+NFR-001: API response time shall not exceed 10 seconds for code analysis
+NFR-002: Database query time shall not exceed 100ms for history retrieval
+NFR-003: Frontend page load time shall not exceed 3 seconds
+NFR-004: System shall support minimum 10 concurrent users
+NFR-005: Memory usage shall not exceed 512MB under normal operation
+3.2 Scalability Requirements
+NFR-006: Database shall support storage of minimum 100,000 analysis records
+NFR-007: System architecture shall support horizontal scaling (future)
+NFR-008: API shall handle rate limiting from Gemini API gracefully
+3.3 Reliability Requirements
+NFR-009: System uptime shall be minimum 95%
+NFR-010: Database backup shall be performed daily (manual/automated)
+NFR-011: System shall recover from crashes within 5 minutes
+NFR-012: Failed API calls shall not corrupt database state
+3.4 Usability Requirements
+NFR-013: Interface shall be intuitive without requiring user manual
+NFR-014: Error messages shall be clear and actionable
+NFR-015: Loading indicators shall be visible during all async operations
+NFR-016: Copy-to-clipboard shall work with single click
+3.5 Compatibility Requirements
+NFR-017: System shall work on Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+NFR-018: System shall be responsive on devices with screen width ≥320px
+NFR-019: Backend shall run on Java 8 or higher
+NFR-020: Database shall be compatible with MySQL 8.0+
+3.6 Maintainability Requirements
+NFR-021: Code shall follow modular architecture with separation of concerns
+NFR-022: All major functions shall be documented with comments
+NFR-023: Configuration shall be externalized (database credentials, API keys)
+NFR-024: Logging shall be implemented for debugging and monitoring
+________________________________________
+4. SYSTEM ARCHITECTURE
+4.1 Technology Stack
+Backend:
+•	Language: Java 8+
+•	Build Tool: Maven 3.6+
+•	Web Framework: Spark Java 2.9.4
+•	Database Driver: MySQL Connector/J 8.4.0
+•	JSON Library: Gson 2.10.1
+•	Logging: SLF4J 1.7.36
+Frontend:
+•	HTML5
+•	CSS3 (Custom styling, no frameworks)
+•	JavaScript (ES6+, Vanilla - no frameworks)
+•	Font: Google Fonts (Plus Jakarta Sans)
+Database:
+•	MySQL 8.0+
+•	Storage Engine: InnoDB
+•	Character Set: UTF8MB4
+•	Collation: utf8mb4_unicode_ci
+External Services:
+•	Google Gemini API (v1beta)
+•	Model: gemini-2.5-flash
+4.2 Architecture Diagram
+┌─────────────────────────────────────────────────────────────┐
+│                        USER BROWSER                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │           Frontend (HTML/CSS/JavaScript)            │   │
+│  │  - Code Input Interface                             │   │
+│  │  - Results Display (Tabs)                           │   │
+│  │  - History Viewer                                   │   │
+│  │  - Statistics Dashboard                             │   │
+│  └──────────────────┬──────────────────────────────────┘   │
+└─────────────────────┼──────────────────────────────────────┘
+                      │ HTTP/AJAX (JSON)
+                      │ Port 4567
+┌─────────────────────▼──────────────────────────────────────┐
+│              BACKEND SERVER (Spark Java)                    │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │           CodeAnalyzerServer.java                    │  │
+│  │  - REST API Endpoints                                │  │
+│  │  - CORS Configuration                                │  │
+│  │  - Request Routing                                   │  │
+│  │  - Static File Serving                               │  │
+│  └────┬─────────────────────────────────────────────────┘  │
+│       │                                                     │
+│  ┌────▼─────────────────────────────────────────────────┐  │
+│  │        GeminiCodeAnalyzer.java                       │  │S
+│  │  - AI API Integration                                │  │
+│  │  - Code Analysis Logic                               │  │
+│  │  - Result Processing                                 │  │
+│  └────┬─────────────────────────────────────────────────┘  │
+│       │                                                     │
+│  ┌────▼─────────────────────────────────────────────────┐  │
+│  │           DatabaseManager.java                       │  │
+│  │  - Database Operations (CRUD)                        │  │
+│  │  - Connection Management                             │  │
+│  │  - Query Execution                                   │  │
+│  └────┬─────────────────────────────────────────────────┘  │
+│       │                                                     │
+│  ┌────▼─────────────────────────────────────────────────┐  │
+│  │          DatabaseConfig.java                         │  │
+│  │  - Configuration Constants                           │  │
+│  │  - Credentials Management                            │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────┬──────────────────────────────────────┘
+                      │ JDBC Connection
+                      │ Port 3306
+┌─────────────────────▼──────────────────────────────────────┐
+│                   MySQL DATABASE                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  Table: code_analysis                                │  │
+│  │  - id (PK, AUTO_INCREMENT)                           │  │
+│  │  - original_code (TEXT)                              │  │
+│  │  - timestamp (DATETIME)                              │  │
+│  │  - language (VARCHAR)                                │  │
+│  │  - has_errors (BOOLEAN)                              │  │
+│  │  - errors (TEXT/JSON)                                │  │
+│  │  - output (TEXT)                                     │  │
+│  │  - suggestions (TEXT/JSON)                           │  │
+│  │  - optimal_code (TEXT)                               │  │
+│  │  - created_at (TIMESTAMP)                            │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                      
+                      ▲
+                      │ HTTPS API Call
+                      │
+┌─────────────────────┴──────────────────────────────────────┐
+│              Google Gemini API (External)                   │
+│  - Model: gemini-2.5-flash                                  │
+│  - Endpoint: generativelanguage.googleapis.com              │
+│  - Authentication: API Key                                  │
+└─────────────────────────────────────────────────────────────┘
+4.3 Data Flow
+Analysis Flow:
+1. User inputs code in frontend textarea
+2. User clicks "Analyze Code" button
+3. Frontend sends POST request to /api/analyze with code
+4. CodeAnalyzerServer receives request
+5. Server calls GeminiCodeAnalyzer.analyzeCodeStatic()
+6. GeminiCodeAnalyzer sends HTTP request to Gemini API
+7. Gemini API analyzes code and returns JSON response
+8. GeminiCodeAnalyzer parses response into CodeAnalysisResult object
+9. Server calls DatabaseManager.saveToDatabase()
+10. DatabaseManager inserts record into MySQL database
+11. Server returns JSON response to frontend with result + save status
+12. Frontend displays results in tabbed interface
+13. Frontend calls /api/history to refresh history list
+14. Frontend calls /api/stats to update statistics
+History Retrieval Flow:
+1. Frontend calls GET /api/history?limit=10
+2. CodeAnalyzerServer routes to getHistory()
+3. getHistory() calls DatabaseManager.getRecentHistory(10)
+4. DatabaseManager executes SQL query with LIMIT
+5. Database returns ResultSet with recent records
+6. DatabaseManager converts ResultSet to List<HistoryItem>
+7. Server returns JSON array to frontend
+8. Frontend renders history items with badges and previews
+History Item Load Flow:
+1. User clicks on history item
+2. Frontend calls GET /api/analysis/:id
+3. Server calls DatabaseManager.getAnalysisById(id)
+4. DatabaseManager queries database for specific record
+5. Database returns single record
+6. DatabaseManager converts to CodeAnalysisResult
+7. Server returns full analysis result to frontend
+8. Frontend populates code textarea and displays results
+4.4 Class Diagram
+┌─────────────────────────────────┐
+│   CodeAnalyzerServer            │
+│─────────────────────────────────│
+│ - gson: Gson                    │
+│─────────────────────────────────│
+│ + main(args: String[]): void    │
+│ + enableCORS(): void            │
+│ + analyzeCode(): String         │
+│ + getHistory(): String          │
+│ + getAnalysisById(): String     │
+│ + getStats(): String            │
+└────────────┬────────────────────┘
+             │ uses
+             ▼
+┌─────────────────────────────────┐
+│   GeminiCodeAnalyzer            │
+│─────────────────────────────────│
+│ - API_KEY: String               │
+│ - ENDPOINT: String              │
+│─────────────────────────────────│
+│ + main(args: String[]): void    │
+│ + analyzeCodeStatic(): Result   │
+│ - analyzeCode(): Result         │
+│ - displayResults(): void        │
+│ - saveToJson(): String          │
+│                                 │
+│ ┌─────────────────────────────┐ │
+│ │  CodeAnalysisResult         │ │
+│ │─────────────────────────────│ │
+│ │ + originalCode: String      │ │
+│ │ + timestamp: String         │ │
+│ │ + language: String          │ │
+│ │ + hasErrors: boolean        │ │
+│ │ + errors: String[]          │ │
+│ │ + output: String            │ │
+│ │ + suggestions: String[]     │ │
+│ │ + optimalCode: String       │ │
+│ └─────────────────────────────┘ │
+└────────────┬────────────────────┘
+             │ uses
+             ▼
+┌─────────────────────────────────┐
+│     DatabaseManager             │
+│─────────────────────────────────│
+│─────────────────────────────────│
+│ + saveToDatabase(): boolean     │
+│ + testConnection(): boolean     │
+│ + getRecentHistory(): List      │
+│ + getAnalysisById(): Result     │
+│                                 │
+│ ┌─────────────────────────────┐ │
+│ │  HistoryItem                │ │
+│ │─────────────────────────────│ │
+│ │ + id: int                   │ │
+│ │ + language: String          │ │
+│ │ + hasErrors: boolean        │ │
+│ │ + timestamp: String         │ │
+│ │ + preview: String           │ │
+│ └─────────────────────────────┘ │
+└────────────┬────────────────────┘
+             │ uses
+             ▼
+┌─────────────────────────────────┐
+│      DatabaseConfig             │
+│─────────────────────────────────│
+│ + DB_URL: String                │
+│ + DB_USER: String               │
+│ + DB_PASSWORD: String           │
+│ + TABLE_NAME: String            │
+│ + GEMINI_API_KEY: String        │
+└─────────────────────────────────┘
+________________________________________
+5. USER INTERFACE SPECIFICATIONS
+5.1 Main Screen Layout
+┌────────────────────────────────────────────────────────┐
+│  🤖 Gemini Code Analyzer                              │
+│  AI-Powered Code Analysis with Intelligent Suggestions │
+│  [●] Server Connected | Database: Connected            │
+├────────────────────────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
+│  │   247    │  │    8     │  │   89%    │            │
+│  │  Total   │  │Languages │  │  Error   │            │
+│  │Analyses  │  │Supported │  │   Rate   │            │
+│  └──────────┘  └──────────┘  └──────────┘            │
+├────────────────────────────────────────────────────────┤
+│  📝 Analyze Your Code                                  │
+│  ┌────────────────────────────────────────────────┐   │
+│  │ Programming Language: [Auto Detect ▼]          │   │
+│  └────────────────────────────────────────────────┘   │
+│  ┌────────────────────────────────────────────────┐   │
+│  │ // Paste your code here...                     │   │
+│  │                                                 │   │
+│  │                                                 │   │
+│  │                                                 │   │
+│  └────────────────────────────────────────────────┘   │
+│  ┌────────────────────────────────────────────────┐   │
+│  │          ⚡ Analyze Code                        │   │
+│  └────────────────────────────────────────────────┘   │
+├────────────────────────────────────────────────────────┤
+│  📚 Recent Analysis History                            │
+│  ┌────────────────────────────────────────────────┐   │
+│  │ [Java] [Has Errors]        2025-10-28 11:53:59 │   │
+│  │ public class StudentAverage...                 │   │
+│  ├────────────────────────────────────────────────┤   │
+│  │ [Python] [No Errors]       2025-10-28 10:30:15 │   │
+│  │ def calculate_sum(arr):...                     │   │
+│  └────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────┘
+5.2 Results Screen Layout
+┌────────────────────────────────────────────────────────┐
+│  📊 Analysis Results            [Java] [Errors Found]  │
+├────────────────────────────────────────────────────────┤
+│  [❌ Errors (4)] [💡 Suggestions (5)]                  │
+│  [⚡ Optimized Code] [📄 Original Code]                │
+├────────────────────────────────────────────────────────┤
+│  • Invalid main method signature                       │
+│  • ArrayList<int> should be ArrayList<Integer>         │
+│  • Loop iterates n+1 times instead of n                │
+│  • Integer division will truncate result               │
+├────────────────────────────────────────────────────────┤
+│  [💾 Download JSON] [🔄 Analyze Another]               │
+└────────────────────────────────────────────────────────┘
+5.3 Component Specifications
+Button Styles:
+•	Primary: White background, black text, hover lift effect
+•	Secondary: Transparent with white border, white text
+•	Dimensions: 14px padding vertical, 28px horizontal
+•	Border radius: 8px
+•	Font size: 0.875rem (14px)
+•	Font weight: 600 (semi-bold)
+Input Fields:
+•	Background: rgba(255,255,255,0.05)
+•	Border: 1px solid rgba(255,255,255,0.1)
+•	Border radius: 8px
+•	Padding: 12px 16px
+•	Font: Courier New (for code), Plus Jakarta Sans (for text)
+•	Focus state: Border color changes to rgba(255,255,255,0.3)
+Cards:
+•	Background: rgba(20,20,20,0.95)
+•	Backdrop filter: blur(10px)
+•	Border radius: 12px
+•	Padding: 32px
+•	Border: 1px solid rgba(255,255,255,0.1)
+•	Margin bottom: 20px
+Badges:
+•	Border radius: 12px
+•	Padding: 4px 12px
+•	Font size: 0.75rem
+•	Font weight: 600
+•	Language badge: Blue (#6495ed)
+•	Success badge: Green (#00ff00)
+•	Error badge: Red (#ff4444)
+Tabs:
+•	Active tab: White text, white bottom border (2px)
+•	Inactive tab: rgba(255,255,255,0.6) text
+•	Hover state: rgba(255,255,255,0.8) text
+•	Padding: 12px 20px
+________________________________________
+6. ERROR HANDLING
+6.1 Frontend Errors
+Error Type	User Message	Action
+Empty code input	"Please enter some code to analyze"	Red toast notification, focus textarea
+Server offline	"Server Offline - Start the backend server"	Red status indicator, disable analyze button
+API timeout	"Request timed out. Please try again."	Red toast, retry button
+Network error	"Network error. Check your connection."	Red toast, retry button
+Invalid JSON response	"Unexpected response from server"	Console log error, show generic message
+6.2 Backend Errors
+Error Type	HTTP Status	Response	Logging
+Empty code	400	{"error": "Code cannot be empty"}	WARN level
+Gemini API failure	500	{"error": "Analysis failed: <message>"}	ERROR level with stack trace
+Database connection	500	{"error": "Database unavailable"}	ERROR level
+Invalid analysis ID	404	{"error": "Analysis not found"}	INFO level
+SQL exception	500	{"error": "Database error occurred"}	ERROR level with query details
+6.3 Database Errors
+Error Type	Handling Strategy	Recovery
+Connection timeout	Retry 3 times with 2s delay	Log and notify user
+Constraint violation	Roll back transaction	Return error to user
+Disk space full	Stop write operations	Alert admin, show read-only mode
+Deadlock	Retry transaction	Log occurrence
+________________________________________
+7. TESTING REQUIREMENTS
+7.1 Unit Testing
+•	Test DatabaseManager.saveToDatabase() with valid/invalid data
+•	Test GeminiCodeAnalyzer.analyzeCode() with various code samples
+•	Test DatabaseConfig credential loading
+•	Test API endpoint request/response parsing
+•	Coverage target: >70%
+7.2 Integration Testing
+•	Test end-to-end flow: Frontend → API → Gemini → Database → Frontend
+•	Test database CRUD operations
+•	Test API endpoint error responses
+•	Test concurrent user scenarios
+7.3 User Acceptance Testing
+•	Test all supported programming languages
+•	Test error detection accuracy
+•	Test suggestion relevance
+•	Test UI responsiveness on different devices
+•	Test copy-to-clipboard functionality
+•	Test download JSON functionality
+7.4 Performance Testing
+•	Load testing: 50 concurrent users
+•	Stress testing: 100+ concurrent requests
+•	Database query optimization verification
+•	API response time measurement
+7.5 Security Testing
+•	SQL injection attempts
+•	XSS attack prevention
+•	CORS policy validation
+•	API key exposure check
+•	Input validation testing
+________________________________________
+8. DEPLOYMENT REQUIREMENTS
+8.1 System Requirements
+Server:
+•	OS: Windows 10/11, Linux (Ubuntu 20.04+), macOS 10.15+
+•	CPU: 2 cores minimum, 4 cores recommended
+•	RAM: 4GB minimum, 8GB recommended
+•	Disk: 10GB free space minimum
+•	Network: Stable internet connection for Gemini API
+Software:
+•	Java Runtime Environment (JRE) 8 or higher
+•	MySQL 8.0 or higher
+•	Maven 3.6+ (for building)
+•	Web browser (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
+8.2 Installation Steps
+1.	Install Java JDK 8+
+2.	Install MySQL 8.0+
+3.	Install Maven 3.6+
+4.	Clone/download project source code
+5.	Configure DatabaseConfig.java with credentials
+6.	Create database: CREATE DATABASE code_analyzer;
+7.	Create table using provided SQL schema
+8.	Build project: mvn clean package
+9.	Run server: java -jar target/gemini-code-analyzer-1.0.jar
+10.	Access frontend: http://localhost:4567
+8.3 Configuration
+Environment Variables (Recommended):
+GEMINI_API_KEY=your_api_key_here
+DB_PASSWORD=your_mysql_password
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=code_analyzer
+SERVER_PORT=4567
+Configuration File (DatabaseConfig.java):
+public class DatabaseConfig {
+    public static final String DB_URL = "jdbc:mysql://localhost:3306/code_analyzer";
+    public static final String DB_USER = "root";
+    public static final String DB_PASSWORD = System.getenv("DB_PASSWORD");
+
+public static final String TABLE_NAME = "code_analysis"; public static final String GEMINI_API_KEY = System.getenv("GEMINI_API_KEY"); }
+
+### **8.4 Production Deployment Checklist**
+
+- [ ] Remove hardcoded API keys and passwords
+- [ ] Enable HTTPS/SSL for production
+- [ ] Configure firewall rules (port 4567)
+- [ ] Set up database backups (daily recommended)
+- [ ] Configure logging to file system
+- [ ] Set up monitoring and alerting
+- [ ] Configure max connection pool size
+- [ ] Enable database query logging
+- [ ] Set appropriate file permissions
+- [ ] Document disaster recovery procedures
+
+---
+
+# **PART 2: KNOWLEDGE TRANSFER (KT) DOCUMENT**
+
+---
+
+## **9. SYSTEM OVERVIEW FOR KNOWLEDGE TRANSFER**
+
+### **9.1 Project Purpose**
+This application demonstrates full-stack development skills by integrating:
+- AI/ML services (Google Gemini API)
+- Database management (MySQL)
+- Backend web services (Java/Spark)
+- Modern frontend design (HTML/CSS/JavaScript)
+- RESTful API architecture
+
+### **9.2 Key Learning Outcomes**
+- Integration with third-party APIs
+- Database design and CRUD operations
+- REST API development
+- Frontend-backend communication via AJAX
+- Security best practices (SQL injection prevention, XSS prevention)
+- Error handling and user feedback
+- Responsive web design
+
+---
+
+## **10. CODEBASE STRUCTURE**
+
+### **10.1 File Organization**
+
+my-code-analyzer/ │ ├── pom.xml # Maven configuration & dependencies │ ├── src/ │ ├── main/ │ │ ├── java/ │ │ │ ├── CodeAnalyzerServer.java # Main server entry point │ │ │ ├── GeminiCodeAnalyzer.java # AI analysis logic │ │ │ ├── DatabaseManager.java # Database operations │ │ │ └── DatabaseConfig.java # Configuration constants │ │ │ │ │ └── resources/ │ │ └── public/ │ │ └── index.html # Frontend UI │ │ │ └── test/ │ └── java/ # Unit tests (future) │ ├── target/ # Compiled artifacts │ └── gemini-code-analyzer-1.0.jar # Executable JAR │ ├── code_analysis_*.json # Generated JSON files │ └── README.md # Project documentation
+
+---
+
+## **11. CODE WALKTHROUGH**
+
+### **11.1 CodeAnalyzerServer.java**
+
+**Purpose:** Main entry point for the web server, handles HTTP requests and routes them to appropriate handlers.
+
+**Key Components:**
+
+```java
+public static void main(String[] args) {
+    port(4567);                    // Set server port
+    enableCORS();                  // Enable cross-origin requests
+    staticFiles.location("/public"); // Serve static HTML/CSS/JS
+    
+    // Define API endpoints
+    get("/api/health", ...);       // Health check
+    post("/api/analyze", ...);     // Code analysis
+    get("/api/history", ...);      // Get history
+    get("/api/analysis/:id", ...); // Get specific analysis
+    get("/api/stats", ...);        // Get statistics
+}
+Important Methods:
+1.	enableCORS():
+o	Purpose: Allow frontend to make API calls from browser
+o	Implementation: Sets Access-Control-Allow-Origin headers
+o	Why needed: Browser security prevents cross-origin requests by default
+2.	analyzeCode():
+o	Purpose: Handle POST requests to /api/analyze
+o	Flow: Parse JSON → Call GeminiCodeAnalyzer → Save to DB → Return result
+o	Error handling: Try-catch with appropriate HTTP status codes
+3.	getHistory():
+o	Purpose: Retrieve recent analysis history from database
+o	Parameters: limit (default 10)
+o	Returns: JSON array of history items
+4.	getAnalysisById():
+o	Purpose: Retrieve specific analysis by ID
+o	Path parameter: :id
+o	Returns: Full CodeAnalysisResult object or 404 error
+Request/Response Classes:
+static class AnalyzeRequest {
+    String code;
+    String language;
+}
+
+static class AnalyzeResponse {
+    CodeAnalysisResult result;
+    boolean savedToDatabase;
+}
+
+static class ErrorResponse {
+    String error;
+}
+________________________________________
+11.2 GeminiCodeAnalyzer.java
+Purpose: Core analysis logic, communicates with Gemini API and processes results.
+Key Components:
+private static final String GEMINI_API_ENDPOINT = 
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+Important Methods:
+1.	analyzeCodeStatic():
+o	Purpose: Static entry point for API server
+o	Parameters: code (String)
+o	Returns: CodeAnalysisResult
+o	Why static: Called from CodeAnalyzerServer without instance
+2.	analyzeCode():
+o	Purpose: Main analysis logic
+o	Steps: 
+o	a. Create prompt with specific JSON format requestb. Build JSON payload for Gemini APIc. Make HTTP POST request to Geminid. Read and parse responsee. Extract JSON from AI responsef. Parse into CodeAnalysisResult objectg. Add timestamp and original codeh. Return result
+3.	Prompt Engineering:
+4.	String prompt = String.format(
+5.	    "Analyze the following code and provide a detailed response in this EXACT JSON format:\n\n" +
+6.	    "{\n" +
+7.	    "  \"language\": \"detected programming language\",\n" +
+8.	    "  \"has_errors\": true/false,\n" +
+9.	    "  \"errors\": [\"list of errors\"],\n" +
+10.	    "  \"output\": \"expected output\",\n" +
+11.	    "  \"suggestions\": [\"improvements\"],\n" +
+12.	    "  \"optimal_code\": \"optimized version\"\n" +
+13.	    "}\n\n" +
+14.	    "Code to analyze:\n```\n%s\n```\n\n" +
+15.	    "Provide ONLY the JSON response, no additional text.", code
+16.	);
+o	Key technique: Request exact JSON format to ensure parseable response
+o	Instruction: "Provide ONLY the JSON response" prevents extra text
+17.	API Communication:
+18.	URL url = new URL(GEMINI_API_ENDPOINT + "?key=" + apiKey);
+19.	HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+20.	conn.setRequestMethod("POST");
+21.	conn.setRequestProperty("Content-Type", "application/json");
+22.	conn.setDoOutput(true);
+23.	Response Parsing:
+24.	// Extract text from Gemini's nested JSON structure
+25.	String aiResponse = jsonResponse
+26.	    .getAsJsonArray("candidates")
+27.	    .get(0).getAsJsonObject()
+28.	    .get("content").getAsJsonObject()
+29.	    .getAsJsonArray("parts")
+30.	    .get(0).getAsJsonObject()
+31.	    .get("text").getAsString();
+32.	
+33.	// Remove markdown code blocks if present
+34.	aiResponse = aiResponse.replaceAll("```json\\s*", "")
+35.	                       .replaceAll("```\\s*$", "")
+36.	                       .trim();
+37.	
+38.	// Parse into Java object
+39.	CodeAnalysisResult result = gson.fromJson(aiResponse, CodeAnalysisResult.class);
+Inner Class - CodeAnalysisResult:
+public static class CodeAnalysisResult {
+    public String originalCode;
+    public String timestamp;
+    public String language;
+    public boolean hasErrors;
+    public String[] errors;
+    public String output;
+    public String[] suggestions;
+    public String optimalCode;
+}
+•	All fields are public for Gson serialization
+•	Arrays used for errors and suggestions (variable length)
+•	Timestamp added after AI analysis
+________________________________________
+11.3 DatabaseManager.java
+Purpose: All database operations, connection management, and SQL queries.
+Key Components:
+1.	saveToDatabase():
+2.	public static boolean saveToDatabase(CodeAnalysisResult result) {
+3.	    String sql = "INSERT INTO " + DatabaseConfig.TABLE_NAME + 
+4.	                 " (original_code, timestamp, language, has_errors, " +
+5.	                 "errors, output, suggestions, optimal_code) " +
+6.	                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+7.	    
+8.	    try (Connection conn = DriverManager.getConnection(...);
+9.	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+10.	        
+11.	        // Convert arrays to JSON strings
+12.	        Gson gson = new Gson();
+13.	        String errorsJson = gson.toJson(result.errors);
+14.	        String suggestionsJson = gson.toJson(result.suggestions);
+15.	        
+16.	        // Set parameters (prevents SQL injection)
+17.	        pstmt.setString(1, result.originalCode);
+18.	        pstmt.setString(2, result.timestamp);
+19.	        pstmt.setString(3, result.language);
+20.	        pstmt.setBoolean(4, result.hasErrors);
+21.	        pstmt.setString(5, errorsJson);
+22.	        pstmt.setString(6, result.output);
+23.	        pstmt.setString(7, suggestionsJson);
+24.	        pstmt.setString(8, result.optimalCode);
+25.	        
+26.	        int rowsAffected = pstmt.executeUpdate();
+27.	        return rowsAffected > 0;
+28.	    } catch (SQLException e) {
+29.	        // Log error and return false
+30.	        return false;
+31.	    }
+32.	}
+Key Concepts:
+o	Prepared Statements: Use ? placeholders, prevents SQL injection
+o	Try-with-resources: Automatically closes connections
+o	JSON serialization: Arrays stored as JSON strings in TEXT field
+o	Error handling: Catches SQLException, logs, returns boolean
+33.	getRecentHistory():
+34.	public static List<HistoryItem> getRecentHistory(int limit) {
+35.	    String sql = "SELECT id, language, has_errors, timestamp, " +
+36.	                 "LEFT(original_code, 100) as code_preview " +
+37.	                 "FROM " + DatabaseConfig.TABLE_NAME + " " +
+38.	                 "ORDER BY id DESC LIMIT ?";
+39.	    
+40.	    List<HistoryItem> history = new ArrayList<>();
+41.	    
+42.	    try (Connection conn = DriverManager.getConnection(...);
+43.	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+44.	        
+45.	        pstmt.setInt(1, limit);
+46.	        ResultSet rs = pstmt.executeQuery();
+47.	        
+48.	        while (rs.next()) {
+49.	            HistoryItem item = new HistoryItem();
+50.	            item.id = rs.getInt("id");
+51.	            item.language = rs.getString("language");
+52.	            item.hasErrors = rs.getBoolean("has_errors");
+53.	            item.timestamp = rs.getString("timestamp");
+54.	            item.preview = rs.getString("code_preview");
+55.	            history.add(item);
+56.	        }
+57.	    } catch (SQLException e) {
+58.	        // Handle error
+59.	    }
+60.	    
+61.	    return history;
+62.	}
+Key Concepts:
+o	LEFT() function: Get first 100 characters for preview
+o	ORDER BY DESC: Most recent first
+o	LIMIT: Pagination support
+o	ResultSet iteration: Loop through results with while(rs.next())
+63.	getAnalysisById():
+64.	public static CodeAnalysisResult getAnalysisById(int id) {
+65.	    String sql = "SELECT * FROM " + DatabaseConfig.TABLE_NAME + 
+66.	                 " WHERE id = ?";
+67.	    
+68.	    try (Connection conn = DriverManager.getConnection(...);
+69.	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+70.	        
+71.	        pstmt.setInt(1, id);
+72.	        ResultSet rs = pstmt.executeQuery();
+73.	        
+74.	        if (rs.next()) {
+75.	            Gson gson = new Gson();
+76.	            CodeAnalysisResult result = new CodeAnalysisResult();
+77.	            
+78.	            // Map database columns to object fields
+79.	            result.originalCode = rs.getString("original_code");
+80.	            result.timestamp = rs.getString("timestamp");
+81.	            result.language = rs.getString("language");
+82.	            result.hasErrors = rs.getBoolean("has_errors");
+83.	            
+84.	            // Deserialize JSON arrays
+85.	            String errorsJson = rs.getString("errors");
+86.	            result.errors = errorsJson != null ? 
+87.	                gson.fromJson(errorsJson, String[].class) : 
+88.	                new String[0];
+89.	            
+90.	            result.output = rs.getString("output");
+91.	            
+92.	            String suggestionsJson = rs.getString("suggestions");
+93.	            result.suggestions = suggestionsJson != null ? 
+94.	                gson.fromJson(suggestionsJson, String[].class) : 
+95.	                new String[0];
+96.	            
+97.	            result.optimalCode = rs.getString("optimal_code");
+98.	            
+99.	            return result;
+100.	        }
+101.	    } catch (SQLException e) {
+102.	        // Handle error
+103.	    }
+104.	    
+105.	    return null;
+106.	}
+Key Concepts:
+o	Single record retrieval: Use if(rs.next()) instead of while
+o	JSON deserialization: Convert JSON strings back to arrays
+o	Null handling: Check for null before deserializing
+o	Return null: Indicates record not found
+Inner Class - HistoryItem:
+public static class HistoryItem {
+    public int id;
+    public String language;
+    public boolean hasErrors;
+    public String timestamp;
+    public String preview;
+}
+•	Lightweight object for list display
+•	Doesn't include full code/errors/suggestions
+________________________________________
+11.4 DatabaseConfig.java
+Purpose: Centralized configuration management, externalized credentials.
+public class DatabaseConfig {
+    // Database connection settings
+    public static final String DB_URL = "jdbc:mysql://localhost:3306/code_analyzer";
+    public static final String DB_USER = "root";
+    public static final String DB_PASSWORD = System.getenv("DB_PASSWORD") != null ?
+        System.getenv("DB_PASSWORD") : "default_password";
+    
+    // Table name
+    public static final String TABLE_NAME = "code_analysis";
+    
+    // Gemini API Key
+    public static final String GEMINI_API_KEY = System.getenv("GEMINI_API_KEY") != null ?
+        System.getenv("GEMINI_API_KEY") : "default_key";
+}
+Best Practices:
+1.	Environment Variables: Prefer System.getenv() over hardcoded values
+2.	Fallback Values: Provide defaults for development
+3.	Static Final: Constants that don't change
+4.	Single Source: All config in one place
+Security Notes:
+•	Never commit real credentials to version control
+•	Use .gitignore to exclude DatabaseConfig.java in production
+•	Set environment variables on production server
+•	Consider using properties files for larger projects
+________________________________________
+11.5 Frontend (index.html)
+Purpose: User interface for code input, results display, and history browsing.
+Key Sections:
+1.	HTML Structure:
+2.	<div class="container">
+3.	    <div class="header">...</div>
+4.	    <div class="stats">...</div>
+5.	    <div class="card"><!-- Analyzer --></div>
+6.	    <div class="card results"><!-- Results --></div>
+7.	    <div class="card"><!-- History --></div>
+8.	</div>
+9.	CSS Styling:
+o	Variables approach (not used but could be): 
+o	:root {    --bg-primary: #000;    --bg-card: rgba(20,20,20,0.95);    --text-primary: #fff;    --border: rgba(255,255,255,0.1);}
+o	Glassmorphism effect: 
+o	.card {    background: rgba(20,20,20,0.95);    backdrop-filter: blur(10px);}
+o	Responsive design: 
+o	@media (max-width: 768px) {    .container { padding: 12px; }    .btn-group { flex-direction: column; }}
+10.	JavaScript Functions:
+a. checkHealth():
+async function checkHealth() {
+    try {
+        const response = await fetch(`${API_BASE}/health`);
+        const data = await response.json();
+        
+        // Update UI based on server status
+        if (data.status === 'OK') {
+            indicator.className = 'status-indicator status-connected';
+            statusText.textContent = `Server Connected | Database: ${data.database}`;
+        }
+    } catch (error) {
+        // Show server offline status
+        indicator.className = 'status-indicator status-disconnected';
+        statusText.textContent = 'Server Offline';
+    }
+}
+o	Purpose: Check if backend is running
+o	Visual feedback: Green/red indicator dot
+o	Called on page load
+b. analyzeCode():
+async function analyzeCode() {
+    const code = document.getElementById('codeInput').value;
+    
+    // Validate input
+    if (!code.trim()) {
+        showNotification('Error', 'Please enter some code', 'error');
+        return;
+    }
+    
+    // Show loading
+    resultsCard.innerHTML = '<div class="loading">...</div>';
+    
+    try {
+        // Make API call
+        const response = await fetch(`${API_BASE}/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, language })
+        });
+        
+        // Check response
+        if (!response.ok) {
+            throw new Error('Analysis failed');
+        }
+        
+        // Parse and display results
+        const data = await response.json();
+        displayResults(data.result, code);
+        
+        // Reload history and stats
+        loadHistory();
+        loadStats();
+        
+    } catch (error) {
+        // Show error message
+        resultsCard.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
+}
+o	Uses async/await for cleaner code
+o	Comprehensive error handling
+o	User feedback at each step
+c. displayResults():
+function displayResults(result, code) {
+    // Build HTML string with template literals
+    resultsCard.innerHTML = `
+        <div class="result-header">
+            <h2>📊 Analysis Results</h2>
+            <div>
+                <span class="badge badge-language">${escapeHtml(result.language)}</span>
+                <span class="badge ${result.hasErrors ? 'badge-error' : 'badge-success'}">
+                    ${result.hasErrors ? 'Errors Found' : 'No Errors'}
+                </span>
+            </div>
+        </div>
+        
+        <div class="tabs">...</div>
+        <div class="tab-content">...</div>
+    `;
+    
+    // Store for later use
+    window.currentResult = result;
+}
+o	Dynamic HTML generation
+o	Conditional rendering (error badges)
+o	XSS prevention with escapeHtml()
+d. escapeHtml():
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+o	Security function: Prevents XSS attacks
+o	Converts special characters to HTML entities
+o	Example: <script> becomes &lt;script&gt;
+e. copyCode():
+function copyCode(elementId) {
+    const code = document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        showNotification('Copied!', 'Code copied to clipboard', 'success');
+    });
+}
+o	Uses Clipboard API (modern browsers)
+o	Provides user feedback via notification
+11.	Event Handling:
+12.	// Page load event
+13.	window.addEventListener('DOMContentLoaded', () => {
+14.	    checkHealth();
+15.	    loadHistory();
+16.	    loadStats();
+17.	});
+18.	
+19.	// Button click (inline)
+20.	<button onclick="analyzeCode()">Analyze Code</button>
+21.	
+22.	// Tab switching
+23.	function switchTab(event, tabName) {
+24.	    // Remove active class from all
+25.	    document.querySelectorAll('.tab').forEach(tab => 
+26.	        tab.classList.remove('active')
+27.	    );
+28.	    
+29.	    // Add active to clicked
+30.	    event.target.classList.add('active');
+31.	    
+32.	    // Show corresponding content
+33.	    document.getElementById(tabName + '-content')
+34.	             .classList.add('active');
+35.	}
+________________________________________
+12. DATABASE SCHEMA DETAILS
+12.1 Table: code_analysis
+CREATE TABLE code_analysis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    original_code TEXT NOT NULL,
+    timestamp DATETIME NOT NULL,
+    language VARCHAR(100),
+    has_errors BOOLEAN DEFAULT FALSE,
+    errors TEXT,
+    output TEXT,
+    suggestions TEXT,
+    optimal_code TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+Field Descriptions:
+Field	Type	Constraints	Purpose
+id	INT	PRIMARY KEY, AUTO_INCREMENT	Unique identifier
+original_code	TEXT	NOT NULL	User's submitted code
+timestamp	DATETIME	NOT NULL	When analysis was performed
+language	VARCHAR(100)	NULL	Detected/selected language
+has_errors	BOOLEAN	DEFAULT FALSE	Quick error check flag
+errors	TEXT	NULL	JSON array of error messages
+output	TEXT	NULL	Expected output or error description
+suggestions	TEXT	NULL	JSON array of improvement suggestions
+optimal_code	TEXT	NULL	AI-generated optimized code
+created_at	TIMESTAMP	DEFAULT CURRENT_TIMESTAMP	Database insertion time
+Indexes:
+CREATE INDEX idx_timestamp ON code_analysis(timestamp);
+CREATE INDEX idx_language ON code_analysis(language);
+CREATE INDEX idx_has_errors ON code_analysis(has_errors);
+Sample Data:
+INSERT INTO code_analysis VALUES (
+    1,
+    'public static void main(String args) {...}',
+    '2025-10-28 11:53:59',
+    'Java',
+    1,
+    '["Invalid main method signature", "ArrayList<int> not allowed"]',
+    'Compilation failed due to errors',
+    '["Change to String[] args", "Use ArrayList<Integer>"]',
+    'public static void main(String[] args) {...}',
+    '2025-10-28 11:53:59'
+);
+12.2 Common Queries
+Get all analyses:
+SELECT * FROM code_analysis ORDER BY id DESC;
+Get analyses with errors only:
+SELECT * FROM code_analysis WHERE has_errors = 1;
+Get analyses by language:
+SELECT * FROM code_analysis WHERE language = 'Java';
+Get recent analyses (last 10):
+SELECT * FROM code_analysis ORDER BY timestamp DESC LIMIT 10;
+Count analyses by language:
+SELECT language, COUNT(*) as count 
+FROM code_analysis 
+GROUP BY language 
+ORDER BY count DESC;
+Calculate error rate:
+SELECT 
+    COUNT(*) as total,
+    SUM(has_errors) as with_errors,
+    (SUM(has_errors) / COUNT(*) * 100) as error_rate
+FROM code_analysis;
+Search code containing specific text:
+SELECT * FROM code_analysis 
+WHERE original_code LIKE '%ArrayList%';
+________________________________________
+13. API DOCUMENTATION
+13.1 Base URL
+http://localhost:4567/api
+13.2 Endpoints
+1. Health Check
+GET /api/health
+Description: Check if server and database are running
+Response 200 OK:
+{
+  "status": "OK",
+  "message": "Server is running",
+  "database": "Connected"
+}
+Example:
+curl http://localhost:4567/api/health
+________________________________________
+2. Analyze Code
+POST /api/analyze
+Content-Type: application/json
+Description: Submit code for AI analysis
+Request Body:
+{
+  "code": "public static void main(String args) {\n  System.out.println(\"Hello\");\n}",
+  "language": "java"
+}
+Response 200 OK:
+{
+  "result": {
+    "originalCode": "public static void main(String args) {...}",
+    "timestamp": "2025-10-28 12:00:00",
+    "language": "Java",
+    "hasErrors": true,
+    "errors": [
+      "Invalid main method signature"
+    ],
+    "output": "Compilation failed",
+    "suggestions": [
+      "Change to main(String[] args)"
+    ],
+    "optimalCode": "public static void main(String[] args) {...}"
+  },
+  "savedToDatabase": true
+}
+Response 400 Bad Request:
+{
+  "error": "Code cannot be empty"
+}
+Response 500 Internal Server Error:
+{
+  "error": "Analysis failed: API timeout"
+}
+Example:
+curl -X POST http://localhost:4567/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"code":"def hello():\n  print(\"Hi\")", "language":"python"}'
+________________________________________
+3. Get History
+GET /api/history?limit=10
+Description: Retrieve recent analysis history
+Query Parameters:
+•	limit (optional): Number of results (default: 10)
+Response 200 OK:
+[
+  {
+    "id": 5,
+    "language": "Java",
+    "hasErrors": true,
+    "timestamp": "2025-10-28 11:53:59",
+    "preview": "public class StudentAverage..."
+  },
+  {
+    "id": 4,
+    "language": "Python",
+    "hasErrors": false,
+    "timestamp": "2025-10-28 10:30:15",
+    "preview": "def calculate_sum(arr):..."
+  }
+]
+Example:
+curl http://localhost:4567/api/history?limit=5
+________________________________________
+4. Get Analysis by ID
+GET /api/analysis/:id
+Description: Retrieve specific analysis by database ID
+Path Parameters:
+•	id: Analysis ID (integer)
+Response 200 OK:
+{
+  "originalCode": "...",
+  "timestamp": "2025-10-28 11:53:59",
+  "language": "Java",
+  "hasErrors": true,
+  "errors": [...],
+  "output": "...",
+  "suggestions": [...],
+  "optimalCode": "..."
+}
+Response 404 Not Found:
+{
+  "error": "Analysis not found"
+}
+Example:
+curl http://localhost:4567/api/analysis/5
+________________________________________
+5. Get Statistics
+GET /api/stats
+Description: Get overall usage statistics
+Response 200 OK:
+{
+  "totalAnalyses": 247,
+  "withErrors": 156,
+  "errorRate": 63.16
+}
+Example:
+curl http://localhost:4567/api/stats
+________________________________________
+14. COMMON ISSUES & TROUBLESHOOTING
+14.1 Server Won't Start
+Issue: Address already in use: bind
+Solution:
+1. Check if port 4567 is in use:
+   netstat -ano | findstr :4567    (Windows)
+   lsof -i :4567                   (Linux/Mac)
+   
+2. Kill the process or change port in CodeAnalyzerServer.java:
+   port(8080);  // Use different port
+Issue: ClassNotFoundException: spark.Spark
+Solution:
+1. Rebuild project:
+   mvn clean package
+   
+2. Check if Spark dependency is in pom.xml
+3. Verify JAR file includes dependencies (maven-shade-plugin)
+________________________________________
+14.2 Database Connection Fails
+Issue: Access denied for user 'root'@'localhost'
+Solution:
+1. Verify MySQL password in DatabaseConfig.java
+2. Check MySQL service is running:
+   net start MySQL80    (Windows)
+   sudo service mysql start    (Linux)
+   
+3. Test connection manually:
+   mysql -u root -p
+Issue: Unknown database 'code_analyzer'
+Solution:
+1. Create database:
+   mysql -u root -p
+   CREATE DATABASE code_analyzer;
+   
+2. Create table using provided schema
+Issue: Table 'code_analyzer.code_analysis' doesn't exist
+Solution:
+1. Run table creation SQL:
+   USE code_analyzer;
+   CREATE TABLE code_analysis (...);
+________________________________________
+14.3 Frontend Shows "Server Offline"
+Issue: Red status indicator, "Server Offline" message
+Solution:
+1. Check if backend is running:
+   java -jar target/gemini-code-analyzer-1.0.jar
+   
+2. Verify port 4567 is accessible:
+   curl http://localhost:4567/api/health
+   
+3. Check firewall settings
+4. Try accessing from different browser
+________________________________________
+14.4 Gemini API Errors
+Issue: API Error (Code 400): Bad Request
+Solution:
+1. Verify API key is correct
+2. Check API key has Gemini API enabled
+3. Ensure request payload is valid JSON
+Issue: API Error (Code 404): Model not found
+Solution:
+1. Update model name in GEMINI_API_ENDPOINT
+2. Try: gemini-2.5-flash, gemini-1.5-flash, gemini-pro
+3. Check model availability in your region
+Issue: API Error (Code 429): Rate limit exceeded
+Solution:
+1. Wait before making more requests
+2. Upgrade API plan if needed
+3. Implement request throttling
+________________________________________
+14.5 Frontend Display Issues
+Issue: Results not showing after clicking "Analyze"
+Solution:
+1. Open browser console (F12) and check for errors
+2. Verify API response in Network tab
+3. Check if displayResults() is being called
+4. Ensure resultsCard element exists
+Issue: Copy to clipboard not working
+Solution:
+1. Ensure browser supports Clipboard API
+2. Check if site is accessed via HTTPS (required for clipboard)
+3. For local development, use localhost (allowed)
+________________________________________
+15. FUTURE ENHANCEMENTS
+15.1 Phase 2 Features
+1. User Authentication:
+•	User registration and login
+•	Personal analysis history
+•	Saved code snippets
+•	Usage quotas per user
+2. Advanced Search:
+•	Filter by date range
+•	Search by code content
+•	Filter by error types
+•	Export filtered results
+3. Batch Analysis:
+•	Upload multiple files
+•	Analyze entire project
+•	Generate comprehensive report
+•	Compare code quality over time
+4. Code Comparison:
+•	Side-by-side view (original vs optimal)
+•	Syntax highlighting with diff
+•	Line-by-line annotations
+•	Download comparison report
+5. Real-time Collaboration:
+•	Share analysis links
+•	Comments on code
+•	Collaborative code review
+•	Team analytics dashboard
+6. Additional Languages:
+•	TypeScript
+•	Kotlin
+•	Swift
+•	Ruby
+•	Scala
+•	R
+7. IDE Integration:
+•	VS Code extension
+•	IntelliJ IDEA plugin
+•	Eclipse plugin
+•	Command-line tool
+8. Advanced Analytics:
+•	Code complexity metrics
+•	Performance benchmarks
+•	Security vulnerability detection
+•	Best practice scoring
+15.2 Technical Improvements
+1. Performance Optimization:
+// Connection pooling
+HikariConfig config = new HikariConfig();
+config.setJdbcUrl(DatabaseConfig.DB_URL);
+config.setUsername(DatabaseConfig.DB_USER);
+config.setPassword(DatabaseConfig.DB_PASSWORD);
+config.setMaximumPoolSize(20);
+HikariDataSource dataSource = new HikariDataSource(config);
+2. Caching Layer:
+// Redis caching for frequent queries
+public static CodeAnalysisResult getAnalysisById(int id) {
+    // Check cache first
+    String cacheKey = "analysis:" + id;
+    String cached = redisClient.get(cacheKey);
+    if (cached != null) {
+        return gson.fromJson(cached, CodeAnalysisResult.class);
+    }
+    
+    // If not in cache, query database
+    CodeAnalysisResult result = queryDatabase(id);
+    
+    // Store in cache for 1 hour
+    redisClient.setex(cacheKey, 3600, gson.toJson(result));
+    
+    return result;
+}
+3. Asynchronous Processing:
+// Use CompletableFuture for non-blocking operations
+CompletableFuture<CodeAnalysisResult> future = 
+    CompletableFuture.supplyAsync(() -> {
+        return GeminiCodeAnalyzer.analyzeCodeStatic(code);
+    });
+
+future.thenAccept(result -> {
+    DatabaseManager.saveToDatabase(result);
+    notifyUser(result);
+});
+4. Request Rate Limiting:
+// Implement rate limiting per user/IP
+public class RateLimiter {
+    private Map<String, Integer> requestCounts = new ConcurrentHashMap<>();
+    private static final int MAX_REQUESTS_PER_MINUTE = 10;
+    
+    public boolean allowRequest(String clientId) {
+        int count = requestCounts.getOrDefault(clientId, 0);
+        if (count >= MAX_REQUESTS_PER_MINUTE) {
+            return false;
+        }
+        requestCounts.put(clientId, count + 1);
+        return true;
+    }
+}
+5. Logging Framework:
+// Replace System.out with proper logging
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class CodeAnalyzerServer {
+    private static final Logger logger = LoggerFactory.getLogger(CodeAnalyzerServer.class);
+    
+    public static void main(String[] args) {
+        logger.info("Starting Code Analyzer Server...");
+        logger.debug("Configuration: {}", config);
+        
+        try {
+            // ... server logic
+        } catch (Exception e) {
+            logger.error("Server startup failed", e);
+        }
+    }
+}
+6. Input Validation:
+public class CodeValidator {
+    private static final int MAX_CODE_LENGTH = 10000;
+    private static final int MIN_CODE_LENGTH = 10;
+    
+    public static ValidationResult validate(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            return ValidationResult.error("Code cannot be empty");
+        }
+        
+        if (code.length() < MIN_CODE_LENGTH) {
+            return ValidationResult.error("Code must be at least 10 characters");
+        }
+        
+        if (code.length() > MAX_CODE_LENGTH) {
+            return ValidationResult.error("Code exceeds maximum length of 10,000 characters");
+        }
+        
+        // Check for suspicious patterns
+        if (containsMaliciousPatterns(code)) {
+            return ValidationResult.error("Code contains suspicious patterns");
+        }
+        
+        return ValidationResult.success();
+    }
+}
+7. Database Migration System:
+-- migrations/V1__initial_schema.sql
+CREATE TABLE code_analysis (...);
+
+-- migrations/V2__add_user_id.sql
+ALTER TABLE code_analysis ADD COLUMN user_id INT;
+ALTER TABLE code_analysis ADD FOREIGN KEY (user_id) REFERENCES users(id);
+
+-- migrations/V3__add_indexes.sql
+CREATE INDEX idx_user_timestamp ON code_analysis(user_id, timestamp);
+8. API Versioning:
+// Support multiple API versions
+get("/api/v1/analyze", (req, res) -> analyzeV1(req, res));
+get("/api/v2/analyze", (req, res) -> analyzeV2(req, res));
+
+// Version 2 might include additional features
+private static String analyzeV2(Request req, Response res) {
+    // Enhanced analysis with code complexity metrics
+    CodeAnalysisResult result = GeminiCodeAnalyzer.analyzeCodeStatic(code);
+    ComplexityMetrics metrics = calculateComplexity(code);
+    
+    return gson.toJson(new EnhancedResponse(result, metrics));
+}
+________________________________________
+16. DEPLOYMENT GUIDE
+16.1 Local Development Setup
+Prerequisites:
+# Install Java
+java -version  # Should show Java 8+
+
+# Install MySQL
+mysql --version  # Should show MySQL 8.0+
+
+# Install Maven
+mvn -version  # Should show Maven 3.6+
+Setup Steps:
+# 1. Clone repository
+git clone https://github.com/username/code-analyzer.git
+cd code-analyzer
+
+# 2. Configure database
+mysql -u root -p
+CREATE DATABASE code_analyzer;
+USE code_analyzer;
+SOURCE schema.sql;  # Run table creation script
+
+# 3. Set environment variables
+export GEMINI_API_KEY="your_api_key_here"
+export DB_PASSWORD="your_mysql_password"
+
+# 4. Build project
+mvn clean package
+
+# 5. Run server
+java -jar target/gemini-code-analyzer-1.0.jar
+
+# 6. Open browser
+# Navigate to http://localhost:4567
+________________________________________
+16.2 Production Deployment (Linux Server)
+1. Server Setup:
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Java
+sudo apt install openjdk-11-jdk -y
+
+# Install MySQL
+sudo apt install mysql-server -y
+sudo mysql_secure_installation
+
+# Create application user
+sudo useradd -m -s /bin/bash codeanalyzer
+sudo su - codeanalyzer
+2. Application Deployment:
+# Create directory structure
+mkdir -p /home/codeanalyzer/app
+mkdir -p /home/codeanalyzer/logs
+mkdir -p /home/codeanalyzer/config
+
+# Upload JAR file
+scp target/gemini-code-analyzer-1.0.jar user@server:/home/codeanalyzer/app/
+
+# Create config file
+cat > /home/codeanalyzer/config/application.conf << EOF
+DB_URL=jdbc:mysql://localhost:3306/code_analyzer
+DB_USER=codeanalyzer_user
+DB_PASSWORD=secure_password_here
+GEMINI_API_KEY=your_api_key_here
+SERVER_PORT=4567
+EOF
+
+# Set permissions
+chmod 600 /home/codeanalyzer/config/application.conf
+3. Create Systemd Service:
+sudo nano /etc/systemd/system/code-analyzer.service
+[Unit]
+Description=Gemini Code Analyzer Service
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=codeanalyzer
+WorkingDirectory=/home/codeanalyzer/app
+EnvironmentFile=/home/codeanalyzer/config/application.conf
+ExecStart=/usr/bin/java -jar /home/codeanalyzer/app/gemini-code-analyzer-1.0.jar
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/codeanalyzer/logs/app.log
+StandardError=append:/home/codeanalyzer/logs/error.log
+
+[Install]
+WantedBy=multi-user.target
+4. Start Service:
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable service (start on boot)
+sudo systemctl enable code-analyzer
+
+# Start service
+sudo systemctl start code-analyzer
+
+# Check status
+sudo systemctl status code-analyzer
+
+# View logs
+sudo journalctl -u code-analyzer -f
+5. Configure Nginx Reverse Proxy:
+sudo apt install nginx -y
+sudo nano /etc/nginx/sites-available/code-analyzer
+server {
+    listen 80;
+    server_name codeanalyzer.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:4567;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support (if needed in future)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # API rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/m;
+    
+    location /api/ {
+        limit_req zone=api burst=5 nodelay;
+        proxy_pass http://localhost:4567;
+    }
+}
+# Enable site
+sudo ln -s /etc/nginx/sites-available/code-analyzer /etc/nginx/sites-enabled/
+
+# Test configuration
+sudo nginx -t
+
+# Restart Nginx
+sudo systemctl restart nginx
+6. SSL/HTTPS Setup (Let's Encrypt):
+# Install Certbot
+sudo apt install certbot python3-certbot-nginx -y
+
+# Obtain certificate
+sudo certbot --nginx -d codeanalyzer.yourdomain.com
+
+# Auto-renewal is configured automatically
+# Test renewal
+sudo certbot renew --dry-run
+7. Firewall Configuration:
+# Enable firewall
+sudo ufw enable
+
+# Allow SSH
+sudo ufw allow 22/tcp
+
+# Allow HTTP/HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# Check status
+sudo ufw status
+8. Database Backup:
+# Create backup script
+cat > /home/codeanalyzer/backup.sh << 'EOF'
+#!/bin/bash
+BACKUP_DIR="/home/codeanalyzer/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+FILENAME="code_analyzer_${DATE}.sql"
+
+mkdir -p $BACKUP_DIR
+
+mysqldump -u root -p'your_password' code_analyzer > $BACKUP_DIR/$FILENAME
+
+# Compress backup
+gzip $BACKUP_DIR/$FILENAME
+
+# Delete backups older than 30 days
+find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
+
+echo "Backup completed: $FILENAME.gz"
+EOF
+
+chmod +x /home/codeanalyzer/backup.sh
+
+# Schedule daily backup (3 AM)
+crontab -e
+# Add line:
+# 0 3 * * * /home/codeanalyzer/backup.sh >> /home/codeanalyzer/logs/backup.log 2>&1
+9. Monitoring Setup:
+# Install monitoring tools
+sudo apt install htop nethogs -y
+
+# Create monitoring script
+cat > /home/codeanalyzer/monitor.sh << 'EOF'
+#!/bin/bash
+echo "=== System Status ==="
+date
+echo ""
+
+echo "Service Status:"
+systemctl is-active code-analyzer
+
+echo ""
+echo "Memory Usage:"
+free -h
+
+echo ""
+echo "Disk Usage:"
+df -h /home/codeanalyzer
+
+echo ""
+echo "Recent Errors:"
+tail -n 20 /home/codeanalyzer/logs/error.log
+
+echo ""
+echo "Database Connections:"
+mysql -u root -p'password' -e "SHOW PROCESSLIST;"
+EOF
+
+chmod +x /home/codeanalyzer/monitor.sh
+
+# Run every hour
+crontab -e
+# Add line:
+# 0 * * * * /home/codeanalyzer/monitor.sh >> /home/codeanalyzer/logs/monitor.log 2>&1
+________________________________________
+16.3 Docker Deployment
+1. Create Dockerfile:
+FROM openjdk:11-jre-slim
+
+# Install MySQL client
+RUN apt-get update && apt-get install -y mysql-client && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy JAR file
+COPY target/gemini-code-analyzer-1.0.jar app.jar
+
+# Expose port
+EXPOSE 4567
+
+# Environment variables
+ENV GEMINI_API_KEY=""
+ENV DB_URL="jdbc:mysql://mysql:3306/code_analyzer"
+ENV DB_USER="root"
+ENV DB_PASSWORD=""
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
+  CMD curl -f http://localhost:4567/api/health || exit 1
+
+# Run application
+ENTRYPOINT ["java", "-jar", "app.jar"]
+2. Create docker-compose.yml:
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: code-analyzer-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: code_analyzer
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: code-analyzer-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      DB_URL: jdbc:mysql://mysql:3306/code_analyzer
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "4567:4567"
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  mysql_data:
+3. Create .env file:
+# .env
+GEMINI_API_KEY=your_api_key_here
+DB_PASSWORD=your_mysql_password_here
+4. Build and Run:
+# Build images
+docker-compose build
+
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Check status
+docker-compose ps
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+5. Docker Commands Reference:
+# Enter MySQL container
+docker exec -it code-analyzer-mysql mysql -u root -p
+
+# Enter app container
+docker exec -it code-analyzer-app bash
+
+# View app logs
+docker logs -f code-analyzer-app
+
+# Restart app
+docker restart code-analyzer-app
+
+# Update app
+docker-compose pull
+docker-compose up -d --build
+________________________________________
+17. SECURITY BEST PRACTICES
+17.1 Input Validation
+Backend Validation:
+public class SecurityUtils {
+    
+    // Sanitize user input
+    public static String sanitizeInput(String input) {
+        if (input == null) return "";
+        
+        // Remove potentially dangerous characters
+        return input.replaceAll("[<>\"'%;()&+]", "")
+                    .trim();
+    }
+    
+    // Validate code length
+    public static boolean isValidCodeLength(String code) {
+        return code != null && 
+               code.length() >= 10 && 
+               code.length() <= 10000;
+    }
+    
+    // Check for SQL injection patterns
+    public static boolean containsSQLInjection(String input) {
+        String[] sqlKeywords = {"DROP", "DELETE", "INSERT", "UPDATE", 
+                               "CREATE", "ALTER", "EXEC", "UNION"};
+        String upperInput = input.toUpperCase();
+        
+        for (String keyword : sqlKeywords) {
+            if (upperInput.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+Frontend Validation:
+function validateCode(code) {
+    // Check length
+    if (code.length < 10) {
+        return { valid: false, error: "Code must be at least 10 characters" };
+    }
+    
+    if (code.length > 10000) {
+        return { valid: false, error: "Code exceeds maximum length" };
+    }
+    
+    // Check for dangerous patterns
+    const dangerousPatterns = [
+        /<script>/gi,
+        /javascript:/gi,
+        /on\w+\s*=/gi  // Event handlers like onclick=
+    ];
+    
+    for (let pattern of dangerousPatterns) {
+        if (pattern.test(code)) {
+            return { valid: false, error: "Code contains potentially dangerous content" };
+        }
+    }
+    
+    return { valid: true };
+}
+________________________________________
+17.2 SQL Injection Prevention
+Always use Prepared Statements:
+// ❌ BAD - Vulnerable to SQL injection
+String sql = "SELECT * FROM code_analysis WHERE language = '" + language + "'";
+Statement stmt = conn.createStatement();
+ResultSet rs = stmt.executeQuery(sql);
+
+// ✅ GOOD - Safe from SQL injection
+String sql = "SELECT * FROM code_analysis WHERE language = ?";
+PreparedStatement pstmt = conn.prepareStatement(sql);
+pstmt.setString(1, language);
+ResultSet rs = pstmt.executeQuery();
+________________________________________
+17.3 XSS Prevention
+Backend:
+// Escape HTML in responses
+public static String escapeHtml(String input) {
+    if (input == null) return "";
+    
+    return input.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;")
+                .replace("/", "&#x2F;");
+}
+Frontend:
+// Always escape user content before displaying
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Use when building HTML
+resultsCard.innerHTML = `
+    <h2>${escapeHtml(result.language)}</h2>
+    <pre>${escapeHtml(result.code)}</pre>
+`;
+________________________________________
+17.4 API Key Security
+1. Environment Variables:
+# Never commit these to git
+export GEMINI_API_KEY="actual_key_here"
+export DB_PASSWORD="actual_password_here"
+2. .gitignore:
+# Credentials
+*.env
+DatabaseConfig.java
+application.properties
+config/
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+target/
+*.jar
+*.class
+3. Rotate Keys Regularly:
+// Implement key rotation
+public class ApiKeyRotation {
+    private static final long KEY_ROTATION_INTERVAL = 30 * 24 * 60 * 60 * 1000L; // 30 days
+    private static long lastRotation = System.currentTimeMillis();
+    
+    public static void checkKeyRotation() {
+        if (System.currentTimeMillis() - lastRotation > KEY_ROTATION_INTERVAL) {
+            notifyAdminToRotateKey();
+            lastRotation = System.currentTimeMillis();
+        }
+    }
+}
+________________________________________
+17.5 HTTPS/TLS Configuration
+Force HTTPS in Production:
+// Add before route definitions
+before((request, response) -> {
+    String scheme = request.headers("X-Forwarded-Proto");
+    if (scheme != null && !scheme.equals("https")) {
+        response.redirect("https://" + request.host() + request.uri());
+        halt();
+    }
+});
+Nginx HTTPS Configuration:
+server {
+    listen 80;
+    server_name codeanalyzer.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name codeanalyzer.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/codeanalyzer.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/codeanalyzer.yourdomain.com/privkey.pem;
+    
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    location / {
+        proxy_pass http://localhost:4567;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+________________________________________
+18. TESTING GUIDE
+18.1 Manual Testing Checklist
+Functional Testing:
+•	[ ] Can submit code and receive analysis
+•	[ ] Language detection works correctly
+•	[ ] Error detection is accurate
+•	[ ] Suggestions are relevant
+•	[ ] Optimized code is valid
+•	[ ] Results save to database
+•	[ ] History displays correctly
+•	[ ] Can load previous analysis
+•	[ ] Copy to clipboard works
+•	[ ] Download JSON works
+•	[ ] Statistics update correctly
+UI/UX Testing:
+•	[ ] All buttons respond to clicks
+•	[ ] Loading indicators show during API calls
+•	[ ] Notifications appear for user actions
+•	[ ] Tabs switch correctly
+•	[ ] Responsive on mobile (320px+)
+•	[ ] Responsive on tablet (768px+)
+•	[ ] Responsive on desktop (1024px+)
+•	[ ] Hover effects work
+•	[ ] Focus states are visible
+Error Handling:
+•	[ ] Empty code shows error message
+•	[ ] Server offline shows appropriate message
+•	[ ] Database error is handled gracefully
+•	[ ] API timeout shows retry option
+•	[ ] Invalid API key shows clear error
+Security Testing:
+•	[ ] SQL injection attempts blocked
+•	[ ] XSS attempts escaped properly
+•	[ ] CORS headers configured correctly
+•	[ ] API keys not exposed in responses
+•	[ ] Passwords not logged
+________________________________________
+18.2 Automated Testing
+Unit Test Example:
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DatabaseManagerTest {
+    
+    @Test
+    public void testSaveToDatabase() {
+        // Arrange
+        CodeAnalysisResult result = new CodeAnalysisResult();
+        result.originalCode = "test code";
+        result.language = "Java";
+        result.hasErrors = false;
+        result.timestamp = "2025-10-28 12:00:00";
+        
+        // Act
+        boolean saved = DatabaseManager.saveToDatabase(result);
+        
+        // Assert
+        assertTrue(saved, "Should save to database successfully");
+    }
+    
+    @Test
+    public void testGetRecentHistory() {
+        // Arrange
+        int limit = 5;
+        
+        // Act
+        List<HistoryItem> history = DatabaseManager.getRecentHistory(limit);
+        
+        // Assert
+        assertNotNull(history);
+        assertTrue(history.size() <= limit);
+    }
+    
+    @Test
+    public void testGetAnalysisById() {
+        // Arrange
+        int validId = 1;
+        
+        // Act
+        CodeAnalysisResult result = DatabaseManager.getAnalysisById(validId);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(validId, result.id);
+    }
+}
+Integration Test Example:
+import io.restassured.RestAssured;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+public class ApiIntegrationTest {
+    
+    @BeforeAll
+    public static void setup() {
+        RestAssured.baseURI = "http://localhost";
+        RestAssured.port = 4567;
+    }
+    
+    @Test
+    public void testHealthEndpoint() {
+        given()
+            .when()
+            .get("/api/health")
+            .then()
+            .statusCode(200)
+            .body("status", equalTo("OK"))
+            .body("database", not(empty()));
+    }
+    
+    @Test
+    public void testAnalyzeEndpoint() {
+        String code = "public static void main(String args) {}";
+        
+        given()
+            .contentType("application/json")
+            .body("{\"code\":\"" + code + "\",\"language\":\"java\"}")
+            .when()
+            .post("/api/analyze")
+            .then()
+            .statusCode(200)
+            .body("result.language", equalTo("Java"))
+            .body("savedToDatabase", equalTo(true));
+    }
+    
+    @Test
+    public void testHistoryEndpoint() {
+        given()
+            .queryParam("limit", 5)
+            .when()
+            .get("/api/history")
+            .then()
+            .statusCode(200)
+            .body("$", hasSize(lessThanOrEqualTo(5)));
+    }
+}
+________________________________________
+19. MAINTENANCE GUIDE
+19.1 Regular Maintenance Tasks
+Daily:
+•	Monitor server logs for errors
+•	Check disk space usage
+•	Verify database backup completed
+•	Monitor API usage and rate limits
+Weekly:
+•	Review error logs for patterns
+•	Check database growth
+•	Test disaster recovery procedures
+•	Update statistics dashboard
+Monthly:
+•	Rotate API keys (if policy requires)
+•	Review and optimize database queries
+•	Update dependencies for security patches
+•	Analyze usage patterns and optimize
+Quarterly:
+•	Full system backup and verification
+•	Penetration testing
+•	Performance benchmarking
+•	User feedback review
+________________________________________
+19.2 Log Management
+Log Rotation Configuration:
+# /etc/logrotate.d/code-analyzer
+/home/codeanalyzer/logs/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 codeanalyzer codeanalyzer
+    sharedscripts
+    postrotate
+        systemctl reload code-analyzer > /dev/null 2>&1 || true
+    endscript
+}
+Log Analysis Script:
+#!/bin/bash
+LOG_FILE="/home/codeanalyzer/logs/app.log"
+
+echo "=== Log Analysis Report ==="
+echo "Date: $(date)"
+echo ""
+
+echo "Total Requests Today:"
+grep "$(date +%Y-%m-%d)" $LOG_FILE | wc -l
+
+echo ""
+echo "Errors Today:"
+grep "ERROR" $LOG_FILE | grep "$(date +%Y-%m-%d)" | wc -l
+
+echo ""
+echo "Top 10 Error Messages:"
+grep "ERROR" $LOG_FILE | cut -d':' -f3- | sort | uniq -c | sort -rn | head -10
+
+echo ""
+echo "API Response Times (avg):"
+grep "Analysis complete" $LOG_FILE | grep "$(date +%Y-%m-%d)" | \
+    awk '{sum+=$NF; count++} END {print sum/count "ms"}'
+________________________________________
+19.3 Database Maintenance
+Optimize Tables:
+-- Run weekly
+OPTIMIZE TABLE code_analysis;
+
+-- Check table status
+SHOW TABLE STATUS LIKE 'code_analysis';
+
+-- Analyze table for query optimization
+ANALYZE TABLE code_analysis;
+Clean Old Data:
+-- Delete analyses older than 1 year
+DELETE FROM code_analysis 
+WHERE timestamp < DATE_SUB(NOW(), INTERVAL 1 YEAR);
+
+-- Archive before deleting (recommended)
+CREATE TABLE code_analysis_archive AS 
+SELECT * FROM code_analysis 
+WHERE timestamp < DATE_SUB(NOW(), INTERVAL 1 YEAR);
+
+-- Then delete from main table
+DELETE FROM code_analysis 
+WHERE timestamp < DATE_SUB(NOW(), INTERVAL 1 YEAR);
+Monitor Database Size:
+SELECT 
+    table_name AS 'Table',
+    ROUND(((data_length + index_length) / 1024 / 1024), 2) AS 'Size (MB)'
+FROM information_schema.TABLES 
+WHERE table_schema = 'code_analyzer'
+ORDER BY (data_length + index_length) DESC;
+________________________________________
+20. CONTACT & SUPPORT
+20.1 Getting Help
+Documentation:
+•	README.md - Quick start guide
+•	API.md - API endpoint documentation
+•	DEPLOYMENT.md - Deployment instructions
+•	CONTRIBUTING.md - Contribution guidelines
+Issue Reporting:
+When reporting issues, include:
+1. Steps to reproduce
+2. Expected behavior
+3. Actual behavior
+4. Server logs (if applicable)
+5. Browser console errors (if applicable)
+6. System information (OS, Java version, MySQL version)
+Example Issue Template:
+## Issue Description
+Brief description of the problem
+
+## Steps to Reproduce
+1. Navigate to...
+2. Click on...
+3. Enter...
+4. Observe error
+
+## Expected Behavior
+What should happen
+
+## Actual Behavior
+What actually happens
+
+## Environment
+- OS: Windows 10
+- Java Version: 11.0.12
+- MySQL Version: 8.0.26
+- Browser: Chrome 95
+
+## Logs
+Paste relevant log excerpts here
+
+## Screenshots
+If applicable
+________________________________________
+20.2 Project Contributors
+Roles:
+•	Project Lead: Overall architecture and direction
+•	Backend Developer: Java/API development
+•	Frontend Developer: UI/UX implementation
+•	Database Administrator: Schema design and optimization
+•	DevOps Engineer: Deployment and infrastructure
+•	QA Engineer: Testing and quality assurance
+________________________________________
+21. GLOSSARY
+API (Application Programming Interface): Interface for communication between software components
+CORS (Cross-Origin Resource Sharing): Security feature that controls which origins can access resources
+CRUD (Create, Read, Update, Delete): Basic database operations
+Glassmorphism: Design style with translucent blur effects
+JDBC (Java Database Connectivity): Java API for database connections
+JSON (JavaScript Object Notation): Lightweight data interchange format
+JWT (JSON Web Token): Secure method for transmitting information (future enhancement)
+Maven: Build automation and dependency management tool for Java
+ORM (Object-Relational Mapping): Technique for converting between databases and objects (not used here but relevant)
+Prepared Statement: Pre-compiled SQL statement that prevents injection
+REST (Representational State Transfer): Architectural style for web services
+SQL Injection: Security vulnerability where malicious SQL is inserted
+SSL/TLS: Protocols for secure communication over networks
+XSS (Cross-Site Scripting): Security vulnerability where malicious scripts are injected
+________________________________________
+22. CONCLUSION
+This document provides comprehensive knowledge transfer for the Gemini Code Analyzer project, covering:
+✅ Product Requirements - What the system does and why
+✅ System Architecture - How components work together
+✅ Code Walkthrough - Detailed explanation of implementation
+✅ Database Design - Schema and query patterns
+✅ API Documentation - Complete endpoint reference
+✅ Deployment Guide - Production setup instructions
+

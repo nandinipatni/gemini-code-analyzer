@@ -1,53 +1,449 @@
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import spark.Request;
 import spark.Response;
+import java.util.List;
 import static spark.Spark.*;
 
 public class CodeAnalyzerServer {
     
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson gson = new Gson();
     
     public static void main(String[] args) {
-        // IMPORTANT: Serve static files FIRST, before any other configuration
-        staticFiles.location("/public");
-        
-        // Set port
+        // ✅ CORRECT ORDER: These 3 lines MUST come first, in this exact order
         port(4567);
-        
-        // Enable CORS for frontend access
+        staticFiles.location("/public");
         enableCORS();
         
+        // Test database connection
         System.out.println("=".repeat(70));
-        System.out.println("🚀 Code Analyzer Server Started!");
+        System.out.println("🚀 Starting Gemini Code Analyzer Server...");
         System.out.println("=".repeat(70));
-        System.out.println("📊 Frontend: http://localhost:4567");
-        System.out.println("🔌 API Base: http://localhost:4567/api");
-        System.out.println("💚 Health Check: http://localhost:4567/api/health");
-        System.out.println("=".repeat(70));
-        System.out.println("\nPress Ctrl+C to stop the server\n");
+        System.out.println("\nTesting database connection...");
         
-        // Health check endpoint
+        if (DatabaseManager.testConnection()) {
+            System.out.println("✓ Database connected successfully!\n");
+        } else {
+            System.out.println("⚠ Warning: Database connection failed\n");
+        }
+        
+        System.out.println("Server running at: http://localhost:4567");
+        System.out.println("=".repeat(70) + "\n");
+        
+        // ============================================================
+        // API ENDPOINTS (Define routes AFTER static files setup)
+        // ============================================================
+        
+        // Health Check Endpoint
         get("/api/health", (req, res) -> {
             res.type("application/json");
-            return "{\"status\":\"OK\",\"message\":\"Server is running\",\"database\":\"" + 
-                   (DatabaseManager.testConnection() ? "Connected" : "Disconnected") + "\"}";
+            
+            JsonObject response = new JsonObject();
+            response.addProperty("status", "OK");
+            response.addProperty("message", "Server is running");
+            
+            // Check database status
+            boolean dbConnected = DatabaseManager.testConnection();
+            response.addProperty("database", dbConnected ? "Connected" : "Disconnected");
+            
+            return response.toString();
         });
         
-        // Main analysis endpoint
-        post("/api/analyze", CodeAnalyzerServer::analyzeCode);
+        // ============================================================
+        // AUTHENTICATION ENDPOINTS
+        // ============================================================
         
-        // Get analysis history
-        get("/api/history", CodeAnalyzerServer::getHistory);
+        // Register new user
+        post("/api/auth/register", (req, res) -> {
+            res.type("application/json");
+            
+            try {
+                RegisterRequest registerData = gson.fromJson(req.body(), RegisterRequest.class);
+                
+                // Validate input
+                if (registerData.username == null || registerData.username.trim().isEmpty()) {
+                    res.status(400);
+                    return gson.toJson(new ErrorResponse("Username is required"));
+                }
+                
+                if (registerData.email == null || registerData.email.trim().isEmpty()) {
+                    res.status(400);
+                    return gson.toJson(new ErrorResponse("Email is required"));
+                }
+                
+                if (registerData.password == null || registerData.password.length() < 6) {
+                    res.status(400);
+                    return gson.toJson(new ErrorResponse("Password must be at least 6 characters"));
+                }
+                
+                // Check if username already exists
+                if (DatabaseManager.userExists(registerData.username)) {
+                    res.status(409);
+                    return gson.toJson(new ErrorResponse("Username already exists"));
+                }
+                
+                // Check if email already exists
+                if (DatabaseManager.emailExists(registerData.email)) {
+                    res.status(409);
+                    return gson.toJson(new ErrorResponse("Email already exists"));
+                }
+                
+                // Create user
+                User newUser = DatabaseManager.createUser(
+                    registerData.username,
+                    registerData.email,
+                    registerData.password,
+                    registerData.fullName
+                );
+                
+                if (newUser != null) {
+                    // Generate JWT token
+                    String token = JWTUtil.generateToken(newUser.getId(), newUser.getUsername());
+                    
+                    AuthResponse authResponse = new AuthResponse(
+                        token,
+                        newUser.toResponse(),
+                        "Registration successful"
+                    );
+                    
+                    res.status(201);
+                    return gson.toJson(authResponse);
+                } else {
+                    res.status(500);
+                    return gson.toJson(new ErrorResponse("Failed to create user"));
+                }
+                
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Registration failed: " + e.getMessage()));
+            }
+        });
+        
+        // Login user
+        post("/api/auth/login", (req, res) -> {
+            res.type("application/json");
+            
+            try {
+                LoginRequest loginData = gson.fromJson(req.body(), LoginRequest.class);
+                
+                // Validate input
+                if (loginData.username == null || loginData.username.trim().isEmpty()) {
+                    res.status(400);
+                    return gson.toJson(new ErrorResponse("Username is required"));
+                }
+                
+                if (loginData.password == null || loginData.password.isEmpty()) {
+                    res.status(400);
+                    return gson.toJson(new ErrorResponse("Password is required"));
+                }
+                
+                // Authenticate user
+                User user = DatabaseManager.authenticateUser(loginData.username, loginData.password);
+                
+                if (user != null) {
+                    // Update last login
+                    DatabaseManager.updateLastLogin(user.getId());
+                    
+                    // Generate JWT token
+                    String token = JWTUtil.generateToken(user.getId(), user.getUsername());
+                    
+                    AuthResponse authResponse = new AuthResponse(
+                        token,
+                        user.toResponse(),
+                        "Login successful"
+                    );
+                    
+                    return gson.toJson(authResponse);
+                } else {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Invalid username or password"));
+                }
+                
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Login failed: " + e.getMessage()));
+            }
+        });
+        
+        // Verify token endpoint
+        get("/api/auth/verify", (req, res) -> {
+            res.type("application/json");
+            
+            String token = req.headers("Authorization");
+            
+            if (token == null || !token.startsWith("Bearer ")) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("No token provided"));
+            }
+            
+            token = token.substring(7); // Remove "Bearer " prefix
+            
+            try {
+                int userId = JWTUtil.verifyToken(token);
+                User user = DatabaseManager.getUserById(userId);
+                
+                if (user != null) {
+                    return gson.toJson(new TokenVerifyResponse(true, user.toResponse()));
+                } else {
+                    res.status(404);
+                    return gson.toJson(new ErrorResponse("User not found"));
+                }
+            } catch (Exception e) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Invalid token"));
+            }
+        });
+        
+        // ============================================================
+        // CODE ANALYSIS ENDPOINTS (Protected - Require Authentication)
+        // ============================================================
+        
+        // Analyze code endpoint
+        post("/api/analyze", (req, res) -> {
+            res.type("application/json");
+            
+            // Check authentication
+            String token = req.headers("Authorization");
+            int userId = -1;
+            
+            if (token != null && token.startsWith("Bearer ")) {
+                try {
+                    userId = JWTUtil.verifyToken(token.substring(7));
+                } catch (Exception e) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Invalid or expired token"));
+                }
+            } else {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Authentication required"));
+            }
+            
+            try {
+                AnalyzeRequest analyzeData = gson.fromJson(req.body(), AnalyzeRequest.class);
+                
+                if (analyzeData.code == null || analyzeData.code.trim().isEmpty()) {
+                    res.status(400);
+                    return gson.toJson(new ErrorResponse("Code cannot be empty"));
+                }
+                
+                // Analyze code using Gemini AI with optional context
+                GeminiCodeAnalyzer.CodeAnalysisResult result = 
+                    (analyzeData.context != null && !analyzeData.context.trim().isEmpty())
+                        ? GeminiCodeAnalyzer.analyzeCodeWithContext(analyzeData.code, analyzeData.context)
+                        : GeminiCodeAnalyzer.analyzeCodeStatic(analyzeData.code);
+                
+                // Save to database with user ID
+                boolean saved = DatabaseManager.saveToDatabase(result, userId);
+                
+                AnalyzeResponse response = new AnalyzeResponse(result, saved);
+                return gson.toJson(response);
+                
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Analysis failed: " + e.getMessage()));
+            }
+        });
+        
+        // Get analysis history for authenticated user
+        get("/api/history", (req, res) -> {
+            res.type("application/json");
+            
+            // Check authentication
+            String token = req.headers("Authorization");
+            int userId = -1;
+            
+            if (token != null && token.startsWith("Bearer ")) {
+                try {
+                    userId = JWTUtil.verifyToken(token.substring(7));
+                } catch (Exception e) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Invalid or expired token"));
+                }
+            } else {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Authentication required"));
+            }
+            
+            try {
+                String limitParam = req.queryParams("limit");
+                int limit = (limitParam != null) ? Integer.parseInt(limitParam) : 10;
+                
+                List<DatabaseManager.HistoryItem> history = 
+                    DatabaseManager.getRecentHistory(userId, limit);
+                
+                return gson.toJson(history);
+                
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Failed to fetch history: " + e.getMessage()));
+            }
+        });
         
         // Get specific analysis by ID
-        get("/api/analysis/:id", CodeAnalyzerServer::getAnalysisById);
+        get("/api/analysis/:id", (req, res) -> {
+            res.type("application/json");
+            
+            // Check authentication
+            String token = req.headers("Authorization");
+            int userId = -1;
+            
+            if (token != null && token.startsWith("Bearer ")) {
+                try {
+                    userId = JWTUtil.verifyToken(token.substring(7));
+                } catch (Exception e) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Invalid or expired token"));
+                }
+            } else {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Authentication required"));
+            }
+            
+            try {
+                int analysisId = Integer.parseInt(req.params(":id"));
+                
+                GeminiCodeAnalyzer.CodeAnalysisResult result = 
+                    DatabaseManager.getAnalysisById(analysisId, userId);
+                
+                if (result != null) {
+                    return gson.toJson(result);
+                } else {
+                    res.status(404);
+                    return gson.toJson(new ErrorResponse("Analysis not found"));
+                }
+                
+            } catch (NumberFormatException e) {
+                res.status(400);
+                return gson.toJson(new ErrorResponse("Invalid analysis ID"));
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Failed to fetch analysis: " + e.getMessage()));
+            }
+        });
         
-        // Stats endpoint
-        get("/api/stats", CodeAnalyzerServer::getStats);
+        // Get statistics for authenticated user
+        get("/api/stats", (req, res) -> {
+            res.type("application/json");
+            
+            // Check authentication
+            String token = req.headers("Authorization");
+            int userId = -1;
+            
+            if (token != null && token.startsWith("Bearer ")) {
+                try {
+                    userId = JWTUtil.verifyToken(token.substring(7));
+                } catch (Exception e) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Invalid or expired token"));
+                }
+            } else {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Authentication required"));
+            }
+            
+            try {
+                DatabaseManager.Stats stats = DatabaseManager.getStats(userId);
+                return gson.toJson(stats);
+                
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Failed to fetch statistics: " + e.getMessage()));
+            }
+        });
+        
+        // ============================================================
+        // DATABASE VIEW ENDPOINTS (Protected)
+        // ============================================================
+        
+        // Get all users (admin feature)
+        get("/api/users", (req, res) -> {
+            res.type("application/json");
+            
+            // Check authentication
+            String token = req.headers("Authorization");
+            
+            if (token == null || !token.startsWith("Bearer ")) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Authentication required"));
+            }
+            
+            try {
+                int userId = JWTUtil.verifyToken(token.substring(7));
+                List<User> users = DatabaseManager.getAllUsers();
+                return gson.toJson(users);
+            } catch (Exception e) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Invalid token"));
+            }
+        });
+        
+        // Get all analyses (admin feature)
+        get("/api/analyses", (req, res) -> {
+            res.type("application/json");
+            
+            // Check authentication
+            String token = req.headers("Authorization");
+            
+            if (token == null || !token.startsWith("Bearer ")) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Authentication required"));
+            }
+            
+            try {
+                int userId = JWTUtil.verifyToken(token.substring(7));
+                List<DatabaseManager.AnalysisRecord> analyses = DatabaseManager.getAllAnalyses();
+                return gson.toJson(analyses);
+            } catch (Exception e) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Invalid token"));
+            }
+        });
+        
+        // ============================================================
+        // PUBLIC ENDPOINTS (No authentication required)
+        // ============================================================
+        
+        // Get supported languages
+        get("/api/languages", (req, res) -> {
+            res.type("application/json");
+            
+            String[] languages = {
+                "Auto Detect",
+                "Java",
+                "Python",
+                "JavaScript",
+                "C++",
+                "C#",
+                "Go",
+                "Rust",
+                "PHP",
+                "TypeScript",
+                "Kotlin",
+                "Swift",
+                "Ruby"
+            };
+            
+            return gson.toJson(languages);
+        });
+        
+        // 404 handler
+        notFound((req, res) -> {
+            res.type("application/json");
+            return gson.toJson(new ErrorResponse("Endpoint not found"));
+        });
+        
+        // Exception handler
+        exception(Exception.class, (exception, req, res) -> {
+            res.type("application/json");
+            res.status(500);
+            res.body(gson.toJson(new ErrorResponse("Internal server error: " + exception.getMessage())));
+        });
     }
     
-    // Enable CORS for all routes
+    // ============================================================
+    // CORS CONFIGURATION
+    // ============================================================
+    
     private static void enableCORS() {
         options("/*", (request, response) -> {
             String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
@@ -65,131 +461,62 @@ public class CodeAnalyzerServer {
 
         before((request, response) -> {
             response.header("Access-Control-Allow-Origin", "*");
-            response.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-            response.header("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With");
+            response.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+            response.header("Access-Control-Allow-Credentials", "true");
         });
     }
     
-    // Analyze code endpoint
-    private static String analyzeCode(Request req, Response res) {
-        res.type("application/json");
-        
-        try {
-            System.out.println("📥 Received analysis request...");
-            
-            // Parse request body
-            AnalyzeRequest request = gson.fromJson(req.body(), AnalyzeRequest.class);
-            
-            if (request.code == null || request.code.trim().isEmpty()) {
-                res.status(400);
-                return gson.toJson(new ErrorResponse("Code cannot be empty"));
-            }
-            
-            System.out.println("🔍 Analyzing code (" + request.code.length() + " characters)...");
-            
-            // Use your existing GeminiCodeAnalyzer
-            String code = request.code;
-            GeminiCodeAnalyzer.CodeAnalysisResult result = GeminiCodeAnalyzer.analyzeCodeStatic(code);
-            
-            System.out.println("✓ Analysis complete: " + result.language + " | Errors: " + result.hasErrors);
-            
-            // Save to database
-            boolean saved = DatabaseManager.saveToDatabase(result);
-            
-            if (saved) {
-                System.out.println("✓ Saved to database");
-            } else {
-                System.out.println("✗ Failed to save to database");
-            }
-            
-            // Return result
-            res.status(200);
-            return gson.toJson(new AnalyzeResponse(result, saved));
-            
-        } catch (Exception e) {
-            res.status(500);
-            System.err.println("❌ Analysis error: " + e.getMessage());
-            e.printStackTrace();
-            return gson.toJson(new ErrorResponse("Analysis failed: " + e.getMessage()));
-        }
+    // ============================================================
+    // REQUEST/RESPONSE DATA CLASSES
+    // ============================================================
+    
+    // Register request
+    static class RegisterRequest {
+        String username;
+        String email;
+        String password;
+        String fullName;
     }
     
-    // Get history endpoint
-    private static String getHistory(Request req, Response res) {
-        res.type("application/json");
-        
-        try {
-            int limit = req.queryParams("limit") != null ? Integer.parseInt(req.queryParams("limit")) : 10;
-            var history = DatabaseManager.getRecentHistory(limit);
-            
-            System.out.println("📚 Retrieved " + history.size() + " history items");
-            
-            res.status(200);
-            return gson.toJson(history);
-            
-        } catch (Exception e) {
-            res.status(500);
-            System.err.println("❌ History fetch error: " + e.getMessage());
-            return gson.toJson(new ErrorResponse("Failed to fetch history: " + e.getMessage()));
-        }
+    // Login request
+    static class LoginRequest {
+        String username;
+        String password;
     }
     
-    // Get analysis by ID
-    private static String getAnalysisById(Request req, Response res) {
-        res.type("application/json");
-        
-        try {
-            int id = Integer.parseInt(req.params(":id"));
-            var analysis = DatabaseManager.getAnalysisById(id);
-            
-            if (analysis != null) {
-                System.out.println("📄 Retrieved analysis #" + id);
-                res.status(200);
-                return gson.toJson(analysis);
-            } else {
-                res.status(404);
-                return gson.toJson(new ErrorResponse("Analysis not found"));
-            }
-            
-        } catch (Exception e) {
-            res.status(500);
-            System.err.println("❌ Analysis fetch error: " + e.getMessage());
-            return gson.toJson(new ErrorResponse("Failed to fetch analysis: " + e.getMessage()));
-        }
-    }
-    
-    // Get stats
-    private static String getStats(Request req, Response res) {
-        res.type("application/json");
-        
-        try {
-            var history = DatabaseManager.getRecentHistory(1000);
-            int total = history.size();
-            int withErrors = 0;
-            for (var item : history) {
-                if (item.hasErrors) withErrors++;
-            }
-            
-            Stats stats = new Stats();
-            stats.totalAnalyses = total;
-            stats.withErrors = withErrors;
-            stats.errorRate = total > 0 ? (withErrors * 100.0 / total) : 0;
-            
-            res.status(200);
-            return gson.toJson(stats);
-            
-        } catch (Exception e) {
-            res.status(500);
-            return gson.toJson(new ErrorResponse("Failed to fetch stats: " + e.getMessage()));
-        }
-    }
-    
-    // Request/Response classes
+    // Analyze request
     static class AnalyzeRequest {
         String code;
         String language;
+        String context;  // NEW: Optional context
     }
     
+    // Authentication response
+    static class AuthResponse {
+        String token;
+        User.UserResponse user;
+        String message;
+        
+        AuthResponse(String token, User.UserResponse user, String message) {
+            this.token = token;
+            this.user = user;
+            this.message = message;
+        }
+    }
+    
+    // Token verification response
+    static class TokenVerifyResponse {
+        boolean valid;
+        User.UserResponse user;
+        
+        TokenVerifyResponse(boolean valid, User.UserResponse user) {
+            this.valid = valid;
+            this.user = user;
+        }
+    }
+    
+    // Analyze response
     static class AnalyzeResponse {
         GeminiCodeAnalyzer.CodeAnalysisResult result;
         boolean savedToDatabase;
@@ -200,17 +527,11 @@ public class CodeAnalyzerServer {
         }
     }
     
+    // Error response
     static class ErrorResponse {
         String error;
         
         ErrorResponse(String error) {
             this.error = error;
-        }
-    }
-    
-    static class Stats {
-        int totalAnalyses;
-        int withErrors;
-        double errorRate;
-    }
+        }    }
 }
